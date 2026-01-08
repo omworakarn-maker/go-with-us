@@ -5,27 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { userAPI } from '../services/api';
 import { Trip } from '../types';
 
-// Define Categories Constant (Should match InterestModal or be imported)
-const CATEGORIES = [
-    { id: 'ธรรมชาติ', emoji: '🌳', label: 'ธรรมชาติ' },
-    { id: 'ผจญภัย', emoji: '🧗', label: 'ผจญภัย' },
-    { id: 'กีฬา', emoji: '🏃', label: 'กีฬา' },
-    { id: 'ปาร์ตี้', emoji: '🎉', label: 'ปาร์ตี้' },
-    { id: 'วัฒนธรรม', emoji: '🏯', label: 'วัฒนธรรม' },
-    { id: 'ถ่ายรูป', emoji: '📸', label: 'ถ่ายรูป' },
-    { id: 'อาหาร', emoji: '🍜', label: 'อาหาร' },
-    { id: 'ทะเล', emoji: '🏖️', label: 'ทะเล' },
-    { id: 'ภูเขา', emoji: '⛰️', label: 'ภูเขา' },
-    { id: 'จิตอาสา', emoji: '🤝', label: 'จิตอาสา' },
-];
-
 interface ExtendedUser {
     id: string;
     email: string;
     name: string;
     role: string;
     createdAt: string;
-    interests?: string[]; // Add interests field
     createdTrips: Trip[];
     participatedTrips: { trip: Trip }[];
 }
@@ -40,7 +25,6 @@ const Profile: React.FC = () => {
     const [newName, setNewName] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [editInterests, setEditInterests] = useState<string[]>([]); // New state for editing interests
     const [saving, setSaving] = useState(false);
 
     const [activeTab, setActiveTab] = useState<'my-trips' | 'joined-trips'>('my-trips');
@@ -56,20 +40,11 @@ const Profile: React.FC = () => {
             const data = await userAPI.getProfile();
             setProfile(data);
             setNewName(data.name);
-            setEditInterests(data.interests || []); // Initialize with current interests
         } catch (error) {
             console.error('Failed to fetch profile:', error);
         } finally {
             setLoading(false);
         }
-    };
-
-    const toggleInterest = (id: string) => {
-        setEditInterests(prev =>
-            prev.includes(id)
-                ? prev.filter(i => i !== id)
-                : [...prev, id]
-        );
     };
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -84,10 +59,7 @@ const Profile: React.FC = () => {
 
         try {
             setSaving(true);
-            const updateData: any = {
-                name: newName,
-                interests: editInterests // Send updated interests
-            };
+            const updateData: any = { name: newName };
             if (newPassword) updateData.password = newPassword;
 
             await userAPI.updateProfile(updateData);
@@ -97,6 +69,7 @@ const Profile: React.FC = () => {
             setConfirmPassword('');
             setIsEditing(false);
 
+            // Clear success message after 3s
             setTimeout(() => setSuccess(''), 3000);
         } catch (error) {
             console.error('Failed to update profile:', error);
@@ -120,7 +93,7 @@ const Profile: React.FC = () => {
     if (!profile) return null;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="min-h-screen bg-white pb-20">
             <Navbar />
 
             <div className="max-w-6xl mx-auto px-6 pt-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -131,25 +104,19 @@ const Profile: React.FC = () => {
                         <div className="absolute top-0 left-0 right-0 h-32 bg-gray-50 rounded-t-[2rem]"></div>
 
                         {/* Avatar */}
-                        <div className="w-32 h-32 bg-indigo-500 rounded-full border-4 border-white shadow-lg overflow-hidden relative z-10 mb-4 flex items-center justify-center text-5xl font-bold text-white">
+                        <div className="w-32 h-32 bg-black rounded-full border-4 border-white shadow-lg overflow-hidden relative z-10 mb-4 flex items-center justify-center text-5xl font-bold text-white">
                             {profile.name.charAt(0).toUpperCase()}
                         </div>
 
                         {!isEditing ? (
-                            <div className="w-full z-10 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="w-full z-10">
                                 <h1 className="text-3xl font-black text-gray-900 mb-1">{profile.name}</h1>
                                 <p className="text-gray-500 font-medium mb-4">{profile.email}</p>
 
-                                <div className="flex flex-wrap justify-center gap-2 mb-6 px-4">
+                                <div className="flex items-center justify-center gap-2 mb-8">
                                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${profile.role === 'admin' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>
                                         {profile.role}
                                     </span>
-                                    {/* Display User Interests */}
-                                    {profile.interests?.map(interest => (
-                                        <span key={interest} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-indigo-50 text-indigo-600 border border-indigo-100">
-                                            {CATEGORIES.find(c => c.id === interest)?.emoji} {interest}
-                                        </span>
-                                    ))}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 w-full max-w-xs mx-auto mb-8 border-t border-gray-100 pt-6">
@@ -168,7 +135,7 @@ const Profile: React.FC = () => {
                                         onClick={() => setIsEditing(true)}
                                         className="px-6 py-2 bg-black text-white rounded-full font-bold text-sm hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-black/10"
                                     >
-                                        แก้ไขข้อมูล / ความสนใจ
+                                        แก้ไขโปรไฟล์
                                     </button>
                                     <button
                                         onClick={logout}
@@ -179,70 +146,47 @@ const Profile: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <form onSubmit={handleUpdateProfile} className="w-full relative z-10 animate-in fade-in zoom-in-95 duration-300 text-left space-y-6">
+                            <form onSubmit={handleUpdateProfile} className="w-full max-w-sm z-10 text-left space-y-4">
                                 <h2 className="text-xl font-bold text-center mb-6">แก้ไขข้อมูลส่วนตัว</h2>
 
                                 {error && <div className="text-red-500 text-xs text-center font-bold bg-red-50 p-2 rounded-lg">{error}</div>}
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-1 block">ชื่อที่แสดง</label>
-                                        <input
-                                            type="text"
-                                            value={newName}
-                                            onChange={(e) => setNewName(e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium"
-                                            required
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-1 block">ชื่อที่แสดง</label>
+                                    <input
+                                        type="text"
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium"
+                                        required
+                                    />
+                                </div>
 
-                                    {/* Interests Selection */}
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-2 block">สิ่งที่สนใจ</label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {CATEGORIES.map(cat => (
-                                                <button
-                                                    key={cat.id}
-                                                    type="button"
-                                                    onClick={() => toggleInterest(cat.id)}
-                                                    className={`p-2 rounded-lg border text-xs font-bold transition-all flex flex-col items-center gap-1 ${editInterests.includes(cat.id)
-                                                            ? 'border-black bg-black text-white shadow-md'
-                                                            : 'border-gray-100 bg-gray-50 text-gray-500 hover:bg-white hover:border-gray-300'
-                                                        }`}
-                                                >
-                                                    <span className="text-lg">{cat.emoji}</span>
-                                                    <span>{cat.label}</span>
-                                                </button>
-                                            ))}
+                                <div className="pt-2 border-t border-gray-100 mt-2">
+                                    <p className="text-xs text-center text-gray-400 mb-4">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</p>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-1 block">รหัสผ่านใหม่</label>
+                                            <input
+                                                type="password"
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium"
+                                            />
                                         </div>
-                                    </div>
-
-                                    <div className="pt-4 border-t border-gray-100">
-                                        <p className="text-xs text-center text-gray-400 mb-4">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</p>
-                                        <div className="space-y-3">
-                                            <div>
-                                                <input
-                                                    type="password"
-                                                    placeholder="รหัสผ่านใหม่"
-                                                    value={newPassword}
-                                                    onChange={(e) => setNewPassword(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium text-sm"
-                                                />
-                                            </div>
-                                            <div>
-                                                <input
-                                                    type="password"
-                                                    placeholder="ยืนยันรหัสผ่านใหม่"
-                                                    value={confirmPassword}
-                                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium text-sm"
-                                                />
-                                            </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-1 block">ยืนยันรหัสผ่านใหม่</label>
+                                            <input
+                                                type="password"
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-black focus:bg-white transition-all font-medium"
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3 justify-center pt-2">
+                                <div className="flex gap-3 justify-center pt-4">
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -251,7 +195,6 @@ const Profile: React.FC = () => {
                                             setNewPassword('');
                                             setConfirmPassword('');
                                             setNewName(profile.name);
-                                            setEditInterests(profile.interests || []); // Reset interests
                                         }}
                                         className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all"
                                     >
@@ -262,7 +205,7 @@ const Profile: React.FC = () => {
                                         disabled={saving}
                                         className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-all shadow-lg shadow-black/10 disabled:opacity-50"
                                     >
-                                        {saving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
+                                        {saving ? 'กำลังบันทึก...' : 'บันทึก'}
                                     </button>
                                 </div>
                             </form>
@@ -304,8 +247,10 @@ const Profile: React.FC = () => {
                                     ))
                                 ) : (
                                     <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <span className="text-2xl">🚀</span>
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                            </svg>
                                         </div>
                                         <p className="text-gray-400 font-medium">คุณยังไม่ได้สร้างทริป</p>
                                         <a href="/" className="text-sm font-bold text-black mt-2 inline-block hover:underline">ไปสร้างทริปกันเถอะ!</a>
@@ -320,8 +265,10 @@ const Profile: React.FC = () => {
                                     ))
                                 ) : (
                                     <div className="col-span-full py-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
-                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <span className="text-2xl">🎒</span>
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
                                         </div>
                                         <p className="text-gray-400 font-medium">คุณยังไม่ได้เข้าร่วมทริปใดๆ</p>
                                         <a href="/explore" className="text-sm font-bold text-black mt-2 inline-block hover:underline">ค้นหาทริปน่าสนใจ</a>

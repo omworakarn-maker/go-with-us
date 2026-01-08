@@ -145,11 +145,11 @@ const Explore: React.FC = () => {
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pt-24 pb-6 px-4">
         {/* Header */}
         <div className="text-center mb-8 animate-in slide-in-from-top-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl shadow-lg shadow-indigo-200">
-            🤖
+          <div className="w-16 h-16 bg-black rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
+            <div className="w-3 h-3 bg-white rounded-full"></div>
           </div>
           <h1 className="text-3xl font-black tracking-tight mb-2">AI Trip Explorer</h1>
-          <p className="text-gray-500 text-sm">ผู้ช่วยอัจฉริยะที่จะช่วยคุณค้นหาทริปและที่เที่ยวที่ใช่</p>
+          <p className="text-gray-500 text-sm">พร้อมช่วยแล้วครับ...</p>
         </div>
 
         {/* Chat Area */}

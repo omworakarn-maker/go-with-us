@@ -18,7 +18,6 @@ const Login: React.FC = () => {
 
         try {
             await login(email, password);
-            // Redirect to the page they tried to visit or home
             const from = (location.state as any)?.from?.pathname || '/';
             navigate(from, { replace: true });
         } catch (err: any) {
@@ -29,22 +28,24 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
+        <div className="min-h-screen bg-white flex items-center justify-center px-4 py-8">
             <div className="w-full max-w-md">
                 {/* Logo/Brand */}
                 <div className="text-center mb-8 animate-in fade-in duration-500">
-                    <Link to="/" className="inline-flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                    <Link to="/" className="inline-flex items-center gap-3 mb-2 group">
+                        <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                            <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
                         </div>
-                        <span className="text-3xl font-black tracking-tighter">GoWithUs.</span>
+                        <span className="text-3xl font-black tracking-tight text-black">GoWithUs<span className="text-gray-400">.</span></span>
                     </Link>
                     <p className="text-gray-500 text-sm font-medium">ไปกับเราสนุกกว่า</p>
                 </div>
 
                 {/* Login Card */}
                 <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-700">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">เข้าสู่ระบบ</h2>
+                    <h2 className="text-2xl font-bold text-black mb-2">เข้าสู่ระบบ</h2>
                     <p className="text-gray-500 text-sm mb-8">ยินดีต้อนรับกลับมา!</p>
 
                     {error && (
@@ -53,7 +54,7 @@ const Login: React.FC = () => {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Email */}
                         <div className="space-y-2">
                             <label className="block text-xs uppercase font-bold text-gray-400 tracking-widest">
@@ -64,7 +65,7 @@ const Login: React.FC = () => {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black outline-none transition-all"
                                 placeholder="your@email.com"
                             />
                         </div>
@@ -79,14 +80,14 @@ const Login: React.FC = () => {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-black placeholder-gray-400 focus:ring-2 focus:ring-black focus:border-black outline-none transition-all"
                                 placeholder="••••••••"
                             />
                         </div>
 
                         {/* Forgot Password */}
                         <div className="text-right">
-                            <a href="#" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                            <a href="#" className="text-xs font-bold text-gray-600 hover:text-black transition-colors">
                                 ลืมรหัสผ่าน?
                             </a>
                         </div>
@@ -95,7 +96,7 @@ const Login: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className="w-full py-4 bg-black text-white font-bold rounded-xl hover:bg-gray-800 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-6"
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">
@@ -122,7 +123,7 @@ const Login: React.FC = () => {
                     <div className="text-center">
                         <p className="text-gray-600 text-sm">
                             ยังไม่มีบัญชี?{' '}
-                            <Link to="/register" className="font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                            <Link to="/register" className="font-bold text-black hover:underline">
                                 สมัครสมาชิก
                             </Link>
                         </p>
@@ -131,8 +132,11 @@ const Login: React.FC = () => {
 
                 {/* Back to Home */}
                 <div className="text-center mt-6">
-                    <Link to="/" className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors">
-                        ← กลับหน้าแรก
+                    <Link to="/" className="text-sm text-gray-500 hover:text-black font-medium transition-colors inline-flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        กลับหน้าแรก
                     </Link>
                 </div>
             </div>

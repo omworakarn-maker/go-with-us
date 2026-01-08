@@ -68,7 +68,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
                 <div className="relative">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full overflow-hidden border-2 border-white shadow-lg cursor-pointer hover:scale-105 transition-transform flex items-center justify-center text-white font-bold text-sm"
+                    className="w-9 h-9 bg-black rounded-full overflow-hidden border-2 border-white shadow-lg cursor-pointer hover:scale-105 transition-transform flex items-center justify-center text-white font-bold text-sm"
                   >
                     {user?.name?.charAt(0).toUpperCase()}
                   </button>

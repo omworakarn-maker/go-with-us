@@ -34,7 +34,7 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
     >
       <div className="w-full md:w-48 h-48 rounded-2xl overflow-hidden bg-gray-50 shrink-0">
         <img
-          src={trip.imageUrl || `https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600&q=80`}
+          src={trip.imageUrl || `https://i.pinimg.com/736x/b1/e0/50/b1e0509730e4e709aabf1626bbdfaa77.jpg`}
           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
           alt={trip.title}
         />
