@@ -1,0 +1,106 @@
+import React from 'react';
+
+interface FilterBarProps {
+  provinces: string[];
+  categories: string[];
+  selectedProvince: string;
+  setSelectedProvince: (province: string) => void;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (cat: string) => void;
+  showProvinceDropdown: boolean;
+  setShowProvinceDropdown: (show: boolean) => void;
+  showCategoryDropdown: boolean;
+  setShowCategoryDropdown: (show: boolean) => void;
+  formatDateLabel: (date: string) => string;
+}
+
+const FilterBar: React.FC<FilterBarProps> = ({
+  provinces,
+  categories,
+  selectedProvince,
+  setSelectedProvince,
+  selectedDate,
+  setSelectedDate,
+  selectedCategory,
+  setSelectedCategory,
+  showProvinceDropdown,
+  setShowProvinceDropdown,
+  showCategoryDropdown,
+  setShowCategoryDropdown,
+  formatDateLabel,
+}) => (
+  <div className="flex flex-wrap gap-3 overflow-visible mb-12 relative">
+    {/* Province Selector */}
+    <div className="relative">
+      <button onClick={() => setShowProvinceDropdown(!showProvinceDropdown)} className="flex items-center gap-2 px-6 py-3 bg-white rounded-full border border-gray-200 text-xs font-bold text-gray-600 shadow-sm hover:border-black transition-all">
+        📍 {selectedProvince}
+        <svg className={`w-3 h-3 transition-transform ${showProvinceDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      {showProvinceDropdown && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowProvinceDropdown(false)}></div>
+          <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="max-h-80 overflow-y-auto no-scrollbar">
+              {provinces.map((province) => (
+                <button
+                  key={province}
+                  onClick={() => {
+                    setSelectedProvince(province);
+                    setShowProvinceDropdown(false);
+                  }}
+                  className={`w-full text-left px-6 py-3 text-xs font-bold transition-colors hover:bg-gray-50 ${selectedProvince === province ? 'text-indigo-600 bg-indigo-50/50' : 'text-gray-600'}`}
+                >
+                  {province}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+    {/* Date Selector */}
+    <div className="relative group">
+      <div className="flex items-center gap-2 px-6 py-3 bg-white rounded-full border border-gray-200 text-xs font-bold text-gray-600 shadow-sm hover:border-black transition-all">
+        📅 {formatDateLabel(selectedDate)}
+        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer w-full" />
+        {selectedDate && (
+          <button onClick={(e) => { e.stopPropagation(); setSelectedDate(''); }} className="ml-1 text-gray-300 hover:text-black">✕</button>
+        )}
+      </div>
+    </div>
+    {/* Category Selector */}
+    <div className="relative">
+      <button onClick={() => setShowCategoryDropdown(!showCategoryDropdown)} className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full text-xs font-bold shadow-lg shadow-black/10 hover:bg-gray-800 transition-all">
+        ✨ {selectedCategory}
+        <svg className={`w-3 h-3 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+      {showCategoryDropdown && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowCategoryDropdown(false)}></div>
+          <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setShowCategoryDropdown(false);
+                }}
+                className={`w-full text-left px-6 py-3 text-xs font-bold transition-colors hover:bg-gray-50 ${selectedCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-gray-600'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+);
+
+export default FilterBar;

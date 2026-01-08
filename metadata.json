@@ -1,0 +1,8 @@
+
+{
+  "name": "Go With Us",
+  "description": "A minimalist group travel platform for creating and joining trips with AI-powered itinerary analysis and group recommendations.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

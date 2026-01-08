@@ -1,0 +1,42 @@
+/* main.css: Custom styles for GoWithUs. (ใช้ควบคู่กับ Tailwind) */
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #FDFDFD;
+  color: #1A1A1A;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::selection {
+  background-color: #4F46E5;
+  color: white;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* เพิ่ม custom class ได้ตามต้องการ เช่น .custom-btn, .custom-card ฯลฯ */
+.custom-btn {
+  @apply px-6 py-2 bg-black text-white text-xs font-bold rounded-full hover:bg-gray-800 transition-all active:scale-95;
+}
+
+.custom-card {
+  @apply bg-white border border-gray-200 rounded-3xl p-6 shadow-sm hover:border-black hover:shadow-xl transition-all duration-500;
+}

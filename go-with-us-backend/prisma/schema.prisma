@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // Will be hashed
+  role      String   @default("user") // "user" or "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  interests String[] @default([])
+  
+  // Relations
+  trips     Trip[]   // Trips created by this user
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  
+  @@map("users")
+}
+
+// Trip/Activity model
+model Trip {
+  id              String   @id @default(uuid())
+  title           String
+  destination     String
+  description     String?
+  startDate       DateTime @map("start_date")
+  endDate         DateTime @map("end_date")
+  budget          String   @default("Budget") // "Budget", "Moderate", "Luxury"
+  maxParticipants Int      @default(10) @map("max_participants")
+  category        String?  // "กินเที่ยว", "กีฬา", "ปาร์ตี้", etc.
+  imageUrl        String?  @db.Text // Base64 image data
+  creatorId       String   @map("creator_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  creator      User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  participants Participant[]
+  messages     Message[]     // Group chat messages
+  
+  @@map("trips")
+  @@index([creatorId])
+  @@index([category])
+  @@index([destination])
+}
+
+// Participant model (users who joined a trip)
+model Participant {
+  id        String   @id @default(uuid())
+  tripId    String   @map("trip_id")
+  userId    String   @map("user_id")
+  name      String   // For now, just store name
+  interests String[] // Array of interests
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  
+  // Relations
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  @@unique([tripId, userId]) // Can't join same trip twice
+  @@map("participants")
+  @@index([tripId])
+}
+
+// Message model (for both group chat and private chat)
+model Message {
+  id          String   @id @default(uuid())
+  content     String   @db.Text
+  senderId    String   @map("sender_id")
+  recipientId String?  @map("recipient_id") // For private chat (null = group chat)
+  tripId      String?  @map("trip_id")      // For group chat (null = private chat)
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  sender    User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User? @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  trip      Trip? @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([tripId])
+  @@index([createdAt])
+}
