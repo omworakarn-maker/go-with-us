@@ -1,18 +1,19 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Trip, AIRecommendation } from "../types";
 
 // Get API key from environment variables
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Initialize AI with API key if available
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => {
   // Check if AI is initialized
-  if (!ai) {
+  if (!genAI) {
     throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in .env.local');
   }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
     ในบทบาทของคุณที่เป็นผู้เชี่ยวชาญด้านการจัดทริปท่องเที่ยวภายในประเทศไทย จงวิเคราะห์กิจกรรมกลุ่มนี้และเสนอแผนการเดินทางที่ออกแบบมาโดยเฉพาะตามความสนใจของสมาชิกทุกคน
@@ -29,49 +30,18 @@ export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => 
     2. ออกแบบให้มีความเรียบหรู แต่ยังคงความมินิมอล (Luxury Minimalist)
     3. เน้นความลงตัวของกลุ่ม (Group Harmony) และประสบการณ์คุณภาพสูง
     4. คำสรุป (Summary) ต้องมีความสละสลวยและสร้างแรงบันดาลใจให้คนอยากไปเที่ยวเมืองไทย
+    5. ตอบกลับเป็น JSON เท่านั้น
   `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          summary: { type: Type.STRING, description: "สรุปภาพรวมของทริปในประเทศไทยที่ออกแบบโดย AI" },
-          groupAnalysis: { type: Type.STRING, description: "การวิเคราะห์ความสอดคล้องของกลุ่มเพื่อน" },
-          itinerary: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                day: { type: Type.INTEGER },
-                activities: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      time: { type: Type.STRING, description: "เวลา เช่น 09:00" },
-                      name: { type: Type.STRING, description: "ชื่อกิจกรรม" },
-                      location: { type: Type.STRING, description: "สถานที่ท่องเที่ยวในไทย" },
-                      description: { type: Type.STRING, description: "รายละเอียดสั้นๆ" }
-                    },
-                    propertyOrdering: ["time", "name", "location", "description"]
-                  }
-                }
-              },
-              propertyOrdering: ["day", "activities"]
-            }
-          }
-        },
-        propertyOrdering: ["summary", "groupAnalysis", "itinerary"]
-      }
-    }
-  });
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  let text = response.text();
+
+  // Clean JSON string
+  text = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
   try {
-    return JSON.parse(response.text);
+    return JSON.parse(text);
   } catch (error) {
     console.error("Failed to parse AI response", error);
     throw new Error("Could not generate Thai trip analysis.");
@@ -95,9 +65,11 @@ export const exploreTrips = async (
   userProfile?: { name: string; interests: string[] }
 ): Promise<{ answer: string; suggestedTripIds: string[]; proposedTrip?: ProposedTrip | null }> => {
   try {
-    if (!ai) {
+    if (!genAI) {
       throw new Error('Gemini API is not configured.');
     }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const tripsContext = availableTrips
       .map(
@@ -153,15 +125,12 @@ export const exploreTrips = async (
       }
     `;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
 
-    const text = result.text;
+    // Clean JSON string
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
     if (!text) throw new Error("No response from AI");
 
