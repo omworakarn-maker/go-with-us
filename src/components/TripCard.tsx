@@ -30,9 +30,9 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
   return (
     <Link
       to={`/trip/${trip.id}`}
-      className="group bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-8 items-start hover:border-black hover:shadow-xl shadow-sm"
+      className="group bg-white border border-gray-200 rounded-3xl p-4 md:p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-4 md:gap-8 items-start hover:border-black hover:shadow-xl shadow-sm"
     >
-      <div className="w-full md:w-48 h-48 rounded-2xl overflow-hidden bg-gray-50 shrink-0">
+      <div className="w-full md:w-48 h-40 md:h-48 rounded-2xl overflow-hidden bg-gray-50 shrink-0">
         <img
           src={trip.imageUrl || `https://i.pinimg.com/736x/b1/e0/50/b1e0509730e4e709aabf1626bbdfaa77.jpg`}
           className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
@@ -40,14 +40,14 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
         />
       </div>
 
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-3 md:space-y-4">
         <div className="flex items-center gap-4">
           <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
             {formatDateThai(trip.startDate)}
           </span>
         </div>
 
-        <h3 className="text-3xl font-black text-black leading-tight tracking-tighter">
+        <h3 className="text-2xl md:text-3xl font-black text-black leading-tight tracking-tighter">
           {trip.title}
         </h3>
 
