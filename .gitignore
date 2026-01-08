@@ -47,3 +47,6 @@ Thumbs.db
 go-with-us-backend/node_modules
 go-with-us-backend/.env
 go-with-us-backend/dist
+
+# Test scripts (contain API keys)
+test-*.js

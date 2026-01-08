@@ -13,7 +13,7 @@ export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => 
     throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in .env.local');
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const prompt = `
     ในบทบาทของคุณที่เป็นผู้เชี่ยวชาญด้านการจัดทริปท่องเที่ยวภายในประเทศไทย จงวิเคราะห์กิจกรรมกลุ่มนี้และเสนอแผนการเดินทางที่ออกแบบมาโดยเฉพาะตามความสนใจของสมาชิกทุกคน
@@ -69,7 +69,7 @@ export const exploreTrips = async (
       throw new Error('Gemini API is not configured.');
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const tripsContext = availableTrips
       .map(
