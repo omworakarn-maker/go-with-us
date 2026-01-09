@@ -7,13 +7,14 @@ export interface Trip {
   description: string;
   startDate: string;
   endDate: string;
-  budget: 'Budget' | 'Moderate' | 'Luxury';
+  budget: number;
   participants: Participant[];
   maxParticipants: number;
   itinerary?: DayPlan[];
   category?: string;
   creatorId?: string;
   imageUrl?: string;
+  gallery?: string[]; // Additional images
 }
 
 export interface User {

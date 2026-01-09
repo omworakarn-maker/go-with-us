@@ -37,7 +37,7 @@ const Home: React.FC = () => {
     startDate: '',
     endDate: '',
     category: TRIP_CATEGORIES[0].label, // Use first category as default
-    budget: 'Budget' as 'Budget' | 'Moderate' | 'Luxury',
+    budget: 1000,
     maxParticipants: 10,
     imageUrl: '',
   });
@@ -72,7 +72,7 @@ const Home: React.FC = () => {
       trip.title.toLowerCase().includes(searchText.toLowerCase()) ||
       trip.description?.toLowerCase().includes(searchText.toLowerCase());
     const provinceMatch = selectedProvince === 'ทุกจังหวัด' || trip.destination.includes(selectedProvince);
-    const dateMatch = !selectedDate || trip.startDate === selectedDate;
+    const dateMatch = !selectedDate || trip.startDate.split('T')[0] === selectedDate;
     const categoryMatch = selectedCategory === 'ทุกหมวดหมู่' || trip.category === selectedCategory;
 
     return searchMatch && provinceMatch && dateMatch && categoryMatch;
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <header className="space-y-4">
               <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase tracking-widest">beta test</div>
-              <h1 className="text-6xl md:text-7xl font-black text-black tracking-tighter leading-[0.85]">ไปกับเรา<br />สนุกกว่า.</h1>
+              <h1 className="text-6xl md:text-7xl font-black text-black tracking-tighter leading-[0.85]">Enjoy with<br />us.</h1>
               <p className="text-gray-400 text-lg font-medium max-w-md">ค้นหากิจกรรมที่คุณสนใจและทำความรู้จักกับเพื่อนใหม่ในสไตล์ที่เป็นคุณ</p>
             </header>
 
@@ -253,17 +253,19 @@ const Home: React.FC = () => {
 
               try {
                 setCreating(true);
-                const response = await tripsAPI.create({
+                const createData: any = {
                   title: newTrip.title,
                   destination: newTrip.destination,
                   description: newTrip.description,
                   startDate: newTrip.startDate,
-                  endDate: newTrip.endDate || newTrip.startDate,
+                  ...(newTrip.endDate && { endDate: newTrip.endDate }),
                   budget: newTrip.budget,
                   maxParticipants: newTrip.maxParticipants,
                   category: newTrip.category,
                   imageUrl: newTrip.imageUrl,
-                });
+                };
+
+                const response = await tripsAPI.create(createData);
 
                 // Add new trip to list
                 await fetchTrips(); // Refresh trips list
@@ -311,12 +313,17 @@ const Home: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-10">
                 <div className="space-y-2 border-b border-gray-200 pb-2">
-                  <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">งบประมาณ</label>
-                  <select required className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none appearance-none" value={newTrip.budget} onChange={e => setNewTrip({ ...newTrip, budget: e.target.value as any })}>
-                    <option value="Budget">ประหยัด</option>
-                    <option value="Moderate">ปานกลาง</option>
-                    <option value="Luxury">หรูหรา</option>
-                  </select>
+                  <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">งบประมาณ (บาท)</label>
+                  <input
+                    required
+                    type="number"
+                    min="100"
+                    step="100"
+                    className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none"
+                    placeholder="เช่น 5000"
+                    value={newTrip.budget}
+                    onChange={e => setNewTrip({ ...newTrip, budget: Math.max(100, parseInt(e.target.value) || 100) })}
+                  />
                 </div>
                 <div className="space-y-2 border-b border-gray-200 pb-2">
                   <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">จำนวนคนสูงสุด</label>

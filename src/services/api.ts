@@ -140,7 +140,7 @@ export interface CreateTripData {
     destination: string;
     description?: string;
     startDate: string;
-    endDate: string;
+    endDate?: string;
     budget?: string;
     maxParticipants?: number;
     category?: string;

@@ -148,7 +148,7 @@ const Explore: React.FC = () => {
           <div className="w-16 h-16 bg-black rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
             <div className="w-3 h-3 bg-white rounded-full"></div>
           </div>
-          <h1 className="text-3xl font-black tracking-tight mb-2">AI Trip Explorer</h1>
+          <h1 className="text-3xl font-black tracking-tight mb-2">Ai assistant</h1>
           <p className="text-gray-500 text-sm">พร้อมช่วยแล้วครับ...</p>
         </div>
 

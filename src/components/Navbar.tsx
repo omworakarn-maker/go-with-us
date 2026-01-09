@@ -41,7 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
           <div className="flex items-center gap-2 md:gap-8">
             <div className="hidden md:flex items-center gap-8">
               <Link to="/" className={`text-xs font-bold transition-colors uppercase tracking-widest ${location.pathname === '/' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>หน้าหลัก</Link>
-              <Link to="/explore" className={`text-xs font-bold transition-colors uppercase tracking-widest ${location.pathname === '/explore' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>สำรวจ</Link>
+              <Link to="/explore" className={`text-xs font-bold transition-colors uppercase tracking-widest ${location.pathname === '/explore' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>ที่ปรึกษา</Link>
               <Link to="/activities" className={`text-xs font-bold transition-colors uppercase tracking-widest ${location.pathname === '/activities' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>กิจกรรม</Link>
               <Link to="/mytrips" className={`text-xs font-bold transition-colors uppercase tracking-widest ${location.pathname === '/mytrips' ? 'text-black' : 'text-gray-400 hover:text-black'}`}>ทริปของฉัน</Link>
             </div>
@@ -175,7 +175,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
                 onClick={() => setShowMobileMenu(false)}
                 className={`block px-4 py-3 rounded-xl text-sm font-bold transition-colors ${location.pathname === '/explore' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-50'}`}
               >
-                สำรวจ
+                ที่ปรึกษา
               </Link>
               <Link
                 to="/activities"

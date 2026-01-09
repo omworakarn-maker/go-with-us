@@ -1,0 +1,31 @@
+// เพิ่มโค้ดนี้ในไฟล์ src/components/TripDetails.tsx
+
+// หาบรรทัดที่มี:
+//   </div>
+// </div>
+// )} 
+// (ประมาณบรรทัด 528-530 ในส่วน Content Management Section)
+
+// แทนที่ด้วย:
+
+                </div>
+                
+                {/* หมายเหตุ */}
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">อย่าลืมบันทึก!</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        หลังจากเพิ่มรูปภาพหรือสร้างแผนการเดินทางเสร็จแล้ว กรุณากดปุ่ม <span className="font-bold">"บันทึกการเปลี่ยนแปลง"</span> ด้านบนเพื่อบันทึกข้อมูล
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+// วิธีหา: ค้นหา "ItineraryEditor" แล้วเลื่อนลงมาหา closing tags
+// ตำแหน่งที่ถูกต้อง: หลังจาก </div> ที่ปิด border-t และก่อน </div> ที่ปิด Content Management Section

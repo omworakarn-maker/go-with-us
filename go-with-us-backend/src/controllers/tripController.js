@@ -131,9 +131,9 @@ export const createTrip = async (req, res, next) => {
         } = req.body;
 
         // Validation
-        if (!title || !destination || !startDate || !endDate) {
+        if (!title || !destination || !startDate) {
             return res.status(400).json({
-                error: 'Title, destination, start date, and end date are required.',
+                error: 'Title, destination, and start date are required.',
             });
         }
 
@@ -143,8 +143,8 @@ export const createTrip = async (req, res, next) => {
                 destination,
                 description: description || null,
                 startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                budget: budget || 'Budget',
+                endDate: endDate ? new Date(endDate) : null,
+                budget: budget && budget >= 100 ? budget : 1000,
                 maxParticipants: maxParticipants || 10,
                 category: category || null,
                 imageUrl: imageUrl || null,
@@ -185,6 +185,8 @@ export const updateTrip = async (req, res, next) => {
             maxParticipants,
             category,
             imageUrl,
+            gallery,
+            itinerary,
         } = req.body;
 
         // Check if trip exists
@@ -213,11 +215,13 @@ export const updateTrip = async (req, res, next) => {
                 ...(destination && { destination }),
                 ...(description !== undefined && { description }),
                 ...(startDate && { startDate: new Date(startDate) }),
-                ...(endDate && { endDate: new Date(endDate) }),
+                ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
                 ...(budget && { budget }),
                 ...(maxParticipants && { maxParticipants }),
                 ...(category !== undefined && { category }),
                 ...(imageUrl !== undefined && { imageUrl }),
+                ...(gallery !== undefined && { gallery }),
+                ...(itinerary !== undefined && { itinerary }),
             },
             include: {
                 creator: {

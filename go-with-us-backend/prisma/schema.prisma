@@ -35,11 +35,13 @@ model Trip {
   destination     String
   description     String?
   startDate       DateTime @map("start_date")
-  endDate         DateTime @map("end_date")
-  budget          String   @default("Budget") // "Budget", "Moderate", "Luxury"
+  endDate         DateTime? @map("end_date")
+  budget          Int      @default(1000) // Budget in THB (minimum 100)
   maxParticipants Int      @default(10) @map("max_participants")
   category        String?  // "กินเที่ยว", "กีฬา", "ปาร์ตี้", etc.
-  imageUrl        String?  @db.Text // Base64 image data
+  imageUrl        String?  @db.Text // Base64 image data (main image)
+  gallery         String[] @default([]) // Additional images (array of URLs or base64)
+  itinerary       Json?    // Custom itinerary created by trip creator
   creatorId       String   @map("creator_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
