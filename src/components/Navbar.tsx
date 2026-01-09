@@ -38,7 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center bg-white/80 backdrop-blur-md border-b border-gray-100 px-3 md:px-6 py-3 md:py-4">
+      <div className="fixed top-0 left-0 right-0 z-[900] flex justify-center bg-white/80 backdrop-blur-md border-b border-gray-100 px-3 md:px-6 py-3 md:py-4">
         <nav className="w-full max-w-6xl flex justify-between items-center">
           <Link to="/" className="flex items-center gap-2 cursor-pointer group">
             <div className="w-7 h-7 md:w-8 md:h-8 bg-black rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -155,10 +155,10 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
       {showMobileMenu && (
         <>
           <div
-            className="fixed inset-0 bg-white z-[60] md:hidden"
+            className="fixed inset-0 bg-white z-[950] md:hidden"
             onClick={() => setShowMobileMenu(false)}
           ></div>
-          <div className="fixed left-0 top-0 bottom-0 w-64 bg-white z-[70] md:hidden animate-in slide-in-from-left duration-300 shadow-2xl border-r border-gray-200">
+          <div className="fixed left-0 top-0 bottom-0 w-64 bg-white z-[1000] md:hidden animate-in slide-in-from-left duration-300 shadow-2xl border-r border-gray-200">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <span className="font-bold text-xl">Menu</span>
               <button

@@ -66,22 +66,6 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
       onClick={handleClick}
       className="group bg-white border border-gray-200 rounded-3xl p-4 md:p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-4 md:gap-8 items-stretch hover:border-black hover:shadow-xl shadow-sm relative overflow-hidden h-full"
     >
-      {/* Status Badge - Absolute Top Right of the CARD */}
-      {isEnded ? (
-        <div className="absolute top-0 right-0 bg-gray-100 px-4 py-2 rounded-bl-2xl text-[10px] font-black text-gray-500 z-20">
-          สิ้นสุดแล้ว
-        </div>
-      ) : daysLeft > 0 && daysLeft <= 30 ? (
-        <div className="absolute top-0 right-0 bg-black px-4 py-2 rounded-bl-2xl text-[10px] font-black text-white z-20">
-          เหลืออีก {daysLeft} วัน
-        </div>
-      ) : isToday ? (
-        <div className="absolute top-0 right-0 bg-indigo-600 px-4 py-2 rounded-bl-2xl text-[10px] font-black text-white z-20">
-          วันนี้!
-        </div>
-      ) : null}
-
-
       <div className="w-full md:w-48 h-40 md:h-auto min-h-[160px] rounded-2xl overflow-hidden bg-gray-50 shrink-0 relative">
         <img
           src={trip.imageUrl || `https://i.pinimg.com/736x/b1/e0/50/b1e0509730e4e709aabf1626bbdfaa77.jpg`}
@@ -99,10 +83,21 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
       </div>
 
       <div className="flex-1 flex flex-col pt-4 md:pt-0">
-        <div className="flex items-center gap-4 mb-3">
+        <div className="flex items-center justify-between mb-3">
           <span className={`text-[10px] font-bold uppercase tracking-widest ${isEnded ? 'text-gray-400' : 'text-indigo-500'}`}>
             {formatDateThai(trip.startDate)}
           </span>
+
+          {/* Status Text Right Aligned */}
+          {!isEnded ? (
+            isToday ? (
+              <span className="text-[10px] font-bold text-indigo-600">วันนี้!</span>
+            ) : daysLeft > 0 && daysLeft <= 30 ? (
+              <span className="text-[10px] font-bold text-gray-400">เหลืออีก {daysLeft} วัน</span>
+            ) : null
+          ) : (
+            <span className="text-[10px] font-bold text-gray-300">สิ้นสุดแล้ว</span>
+          )}
         </div>
 
         <h3 className={`text-2xl font-black leading-tight tracking-tighter mb-2 ${isEnded ? 'text-gray-400 line-through decoration-2' : 'text-black'}`}>

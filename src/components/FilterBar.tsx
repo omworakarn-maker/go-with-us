@@ -31,19 +31,15 @@ const FilterBar: React.FC<FilterBarProps> = ({
   setShowCategoryDropdown,
   formatDateLabel,
 }) => {
+
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDateButtonClick = () => {
+  const handleDateClick = () => {
     if (dateInputRef.current) {
-      try {
-        if ('showPicker' in dateInputRef.current) {
-          (dateInputRef.current as any).showPicker();
-        } else {
-          dateInputRef.current.focus();
-          dateInputRef.current.click();
-        }
-      } catch (error) {
-        dateInputRef.current.focus();
+      if ('showPicker' in dateInputRef.current) {
+        (dateInputRef.current as any).showPicker();
+      } else {
+        dateInputRef.current.click();
       }
     }
   };
@@ -91,13 +87,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
         )}
       </div>
 
+
+
       {/* Date Selector */}
-      <div className="relative">
-        <button
-          type="button"
-          onClick={handleDateButtonClick}
-          className="flex items-center gap-2 px-6 py-3 bg-white rounded-full border border-gray-200 text-xs font-bold text-gray-600 shadow-sm hover:border-black transition-all"
-        >
+      <div className="relative group" onClick={handleDateClick}>
+        <div className="flex items-center gap-2 px-6 py-3 bg-white rounded-full border border-gray-200 text-xs font-bold text-gray-600 shadow-sm group-hover:border-black transition-all cursor-pointer">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
@@ -106,19 +100,23 @@ const FilterBar: React.FC<FilterBarProps> = ({
             <button
               type="button"
               onClick={handleClearDate}
-              className="ml-1 text-gray-300 hover:text-black transition-colors"
+              className="relative z-20 ml-1 text-gray-300 hover:text-black transition-colors"
             >
               ✕
             </button>
           )}
-        </button>
+        </div>
+
+        {/* Invisible Input Overlay 
+            - Mobile: pointer-events-auto (default) -> Tapping triggers native date picker directly
+            - Desktop: pointer-events-none -> Click passes to parent div -> opens showPicker() 
+        */}
         <input
           ref={dateInputRef}
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="absolute opacity-0 pointer-events-none"
-          style={{ width: 0, height: 0 }}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 md:pointer-events-none"
         />
       </div>
 

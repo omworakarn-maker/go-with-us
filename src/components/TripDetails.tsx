@@ -12,9 +12,10 @@ import { GalleryManager } from './GalleryManager';
 import { ItineraryEditor } from './ItineraryEditor';
 import Loader from './Loader';
 
-// Helper function to format budget
-const formatBudget = (budget: number): string => {
-  return budget.toLocaleString('th-TH') + ' บาท';
+const formatBudget = (budget: number | string): string => {
+  const num = Number(budget);
+  if (num === 0) return 'FREE';
+  return num.toLocaleString('th-TH') + ' บาท';
 };
 
 // Helper function to format date (remove time part)
@@ -689,16 +690,26 @@ export const TripDetails: React.FC = () => {
                 <div className="grid grid-cols-2 gap-10">
                   <div className="space-y-2 border-b border-gray-200 pb-2">
                     <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">งบประมาณ (บาท)</label>
-                    <input
-                      required
-                      type="number"
-                      min="100"
-                      step="100"
-                      className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none"
-                      placeholder="เช่น 5000"
-                      value={editForm.budget}
-                      onChange={e => setEditForm({ ...editForm, budget: Math.max(100, parseInt(e.target.value) || 100) })}
-                    />
+                    <div className="relative">
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        step="100"
+                        className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none"
+                        placeholder="ใส่ 0 หากเข้าฟรี"
+                        value={editForm.budget}
+                        onChange={e => {
+                          const val = parseInt(e.target.value);
+                          setEditForm({ ...editForm, budget: isNaN(val) ? 0 : Math.max(0, val) });
+                        }}
+                      />
+                      {editForm.budget === 0 && (
+                        <div className="absolute inset-y-0 right-0 flex items-center pointer-events-none">
+                          <span className="text-black font-black text-xs bg-gray-100 px-2 py-1 rounded">FREE</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2 border-b border-gray-200 pb-2">
                     <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">จำนวนคนสูงสุด</label>

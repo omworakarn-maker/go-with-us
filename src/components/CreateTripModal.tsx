@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { TRIP_CATEGORIES } from '../constants/categories';
@@ -113,12 +114,18 @@ export const CreateTripModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={closeCreateModal}></div>
 
             {/* Modal Container */}
-            <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            <motion.div
+                initial={{ y: "100%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
 
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
@@ -221,13 +228,21 @@ export const CreateTripModal: React.FC = () => {
                                         <input
                                             required
                                             type="number"
-                                            min="100"
+                                            min="0"
                                             step="100"
                                             className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-lg font-bold focus:ring-2 focus:ring-black outline-none"
-                                            placeholder="เช่น 5000"
+                                            placeholder="ใส่ 0 หากเข้าฟรี"
                                             value={newTrip.budget}
-                                            onChange={e => setNewTrip({ ...newTrip, budget: Math.max(100, parseInt(e.target.value) || 100) })}
+                                            onChange={e => {
+                                                const val = parseInt(e.target.value);
+                                                setNewTrip({ ...newTrip, budget: isNaN(val) ? 0 : Math.max(0, val) });
+                                            }}
                                         />
+                                        {newTrip.budget === 0 && (
+                                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                                                <span className="text-black font-black text-sm bg-gray-100 px-2 py-1 rounded">FREE</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -339,7 +354,7 @@ export const CreateTripModal: React.FC = () => {
                     </div>
                 </div>
 
-            </div>
+            </motion.div>
         </div>
     );
 };

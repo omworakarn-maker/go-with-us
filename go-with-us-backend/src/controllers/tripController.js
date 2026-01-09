@@ -229,7 +229,7 @@ export const updateTrip = async (req, res, next) => {
                 ...(description !== undefined && { description }),
                 ...(startDate && { startDate: new Date(startDate) }),
                 ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
-                ...(budget && { budget }),
+                ...(budget !== undefined && { budget }),
                 ...(maxParticipants && { maxParticipants }),
                 ...(category !== undefined && { category }),
                 ...(imageUrl !== undefined && { imageUrl }),
