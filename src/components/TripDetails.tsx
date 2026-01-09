@@ -1,4 +1,4 @@
-import Navbar from './Navbar';
+
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { GroupChat } from './GroupChat';
 import { TRIP_CATEGORIES } from '../constants/categories';
 import { GalleryManager } from './GalleryManager';
 import { ItineraryEditor } from './ItineraryEditor';
+import Loader from './Loader';
 
 // Helper function to format budget
 const formatBudget = (budget: number): string => {
@@ -153,12 +154,9 @@ export const TripDetails: React.FC = () => {
   if (fetchingTrip) {
     return (
       <>
-        <Navbar />
+
         <div className="max-w-4xl mx-auto py-8 px-4 flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-400 font-medium">กำลังโหลดข้อมูล...</p>
-          </div>
+          <Loader variant="dots" />
         </div>
       </>
     );
@@ -167,7 +165,7 @@ export const TripDetails: React.FC = () => {
   if (error || !trip) {
     return (
       <>
-        <Navbar />
+
         <div className="max-w-4xl mx-auto py-8 px-4">
           <button onClick={() => navigate(-1)} className="mb-8 text-sm font-medium text-gray-400 hover:text-black transition-colors flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
@@ -281,7 +279,7 @@ export const TripDetails: React.FC = () => {
 
   return (
     <>
-      <Navbar />
+
 
       {/* Admin Badge - Adjusted position */}
       {isAdmin && (

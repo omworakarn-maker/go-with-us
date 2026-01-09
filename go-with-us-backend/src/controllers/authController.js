@@ -104,6 +104,7 @@ export const login = async (req, res, next) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                interests: user.interests, // Include interests in login response too if possible, but getCurrentUser is main one
             },
         });
     } catch (error) {
@@ -121,6 +122,7 @@ export const getCurrentUser = async (req, res, next) => {
                 name: true,
                 email: true,
                 role: true,
+                interests: true, // ADDED: include interests
                 createdAt: true,
             },
         });

@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
+import { useModal } from '../contexts/ModalContext';
 
 interface NavbarProps {
   onCreateActivity?: () => void;
@@ -11,6 +11,7 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { openCreateModal } = useModal();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -19,7 +20,14 @@ const Navbar: React.FC<NavbarProps> = ({ onCreateActivity }) => {
       navigate('/login');
       return;
     }
-    onCreateActivity?.();
+
+    // Use prop if provided, otherwise use global modal
+    if (onCreateActivity) {
+      onCreateActivity();
+    } else {
+      openCreateModal();
+    }
+
     setShowMobileMenu(false);
   };
 

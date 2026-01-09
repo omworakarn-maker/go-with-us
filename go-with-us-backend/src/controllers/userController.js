@@ -15,6 +15,7 @@ export const getProfile = async (req, res) => {
                 email: true,
                 name: true,
                 role: true,
+                interests: true, // Included interests
                 createdAt: true,
                 trips: {
                     orderBy: { startDate: 'desc' },

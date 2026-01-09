@@ -1,4 +1,5 @@
 import React from 'react';
+import './index.css'; /* Import Tailwind & Global Styles */
 import ReactDOM from 'react-dom/client';
 import AppRouter from './AppRouter';
 import { AuthProvider } from './contexts/AuthContext';

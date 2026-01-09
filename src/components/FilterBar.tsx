@@ -36,16 +36,13 @@ const FilterBar: React.FC<FilterBarProps> = ({
   const handleDateButtonClick = () => {
     if (dateInputRef.current) {
       try {
-        // Use showPicker() if available (modern browsers)
         if ('showPicker' in dateInputRef.current) {
           (dateInputRef.current as any).showPicker();
         } else {
-          // Fallback: focus the input
           dateInputRef.current.focus();
           dateInputRef.current.click();
         }
       } catch (error) {
-        // Fallback: just focus
         dateInputRef.current.focus();
       }
     }
@@ -94,7 +91,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
         )}
       </div>
 
-      {/* Date Selector - FIXED with showPicker() */}
+      {/* Date Selector */}
       <div className="relative">
         <button
           type="button"
@@ -115,7 +112,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
             </button>
           )}
         </button>
-        {/* Hidden date input */}
         <input
           ref={dateInputRef}
           type="date"
@@ -126,7 +122,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
         />
       </div>
 
-      {/* Category Selector */}
+      {/* Category Selector - Compact Dropdown Logic */}
       <div className="relative">
         <button onClick={() => setShowCategoryDropdown(!showCategoryDropdown)} className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full text-xs font-bold shadow-lg shadow-black/10 hover:bg-gray-800 transition-all">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,19 +136,21 @@ const FilterBar: React.FC<FilterBarProps> = ({
         {showCategoryDropdown && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowCategoryDropdown(false)}></div>
-            <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-20 animate-in fade-in zoom-in-95 duration-200">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    setSelectedCategory(cat);
-                    setShowCategoryDropdown(false);
-                  }}
-                  className={`w-full text-left px-6 py-3 text-xs font-bold transition-colors hover:bg-gray-50 ${selectedCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-gray-600'}`}
-                >
-                  {cat}
-                </button>
-              ))}
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+              <div className="max-h-80 overflow-y-auto no-scrollbar">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setShowCategoryDropdown(false);
+                    }}
+                    className={`w-full text-left px-6 py-3 text-xs font-bold transition-colors hover:bg-gray-50 ${selectedCategory === cat ? 'text-indigo-600 bg-indigo-50/50' : 'text-gray-600'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}

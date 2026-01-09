@@ -2,9 +2,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trip } from '../types';
+import { TRIP_CATEGORIES } from '../constants/categories';
 
 interface TripCardProps {
   trip: Trip;
+  onClick?: (trip: Trip) => void;
 }
 
 // Helper function to format date in Thai
@@ -23,44 +25,100 @@ const formatDateThai = (dateString: string): string => {
   return `${dayName}, ${day} ${month}`;
 };
 
-export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
+export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
   const participantCount = trip.participants?.length || 0;
   const displayParticipants = participantCount > 0 ? trip.participants.slice(0, 3) : [];
+
+  // Find category with emoji
+  const categoryData = TRIP_CATEGORIES.find(c => c.label === trip.category);
+
+  // Status Logic
+  const now = new Date();
+
+  // Start Date (00:00:00)
+  const start = new Date(trip.startDate);
+  start.setHours(0, 0, 0, 0);
+
+  // End Date Logic
+  const end = trip.endDate ? new Date(trip.endDate) : new Date(trip.startDate);
+  end.setHours(23, 59, 59, 999);
+
+  const isEnded = now > end;
+
+  // Calculate Diff in days (integer)
+  const oneDay = 1000 * 60 * 60 * 24;
+  const diffTime = start.getTime() - now.getTime();
+  const daysLeft = Math.ceil(diffTime / oneDay);
+
+  // Check if it's "Today" (ongoing)
+  const isToday = now >= start && now <= end;
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick(trip);
+    }
+  };
 
   return (
     <Link
       to={`/trip/${trip.id}`}
-      className="group bg-white border border-gray-200 rounded-3xl p-4 md:p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-4 md:gap-8 items-start hover:border-black hover:shadow-xl shadow-sm"
+      onClick={handleClick}
+      className="group bg-white border border-gray-200 rounded-3xl p-4 md:p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-4 md:gap-8 items-stretch hover:border-black hover:shadow-xl shadow-sm relative overflow-hidden h-full"
     >
-      <div className="w-full md:w-48 h-40 md:h-48 rounded-2xl overflow-hidden bg-gray-50 shrink-0">
+      {/* Status Badge - Absolute Top Right of the CARD */}
+      {isEnded ? (
+        <div className="absolute top-0 right-0 bg-gray-100 px-4 py-2 rounded-bl-2xl text-[10px] font-black text-gray-500 z-20">
+          สิ้นสุดแล้ว
+        </div>
+      ) : daysLeft > 0 && daysLeft <= 30 ? (
+        <div className="absolute top-0 right-0 bg-black px-4 py-2 rounded-bl-2xl text-[10px] font-black text-white z-20">
+          เหลืออีก {daysLeft} วัน
+        </div>
+      ) : isToday ? (
+        <div className="absolute top-0 right-0 bg-indigo-600 px-4 py-2 rounded-bl-2xl text-[10px] font-black text-white z-20">
+          วันนี้!
+        </div>
+      ) : null}
+
+
+      <div className="w-full md:w-48 h-40 md:h-auto min-h-[160px] rounded-2xl overflow-hidden bg-gray-50 shrink-0 relative">
         <img
           src={trip.imageUrl || `https://i.pinimg.com/736x/b1/e0/50/b1e0509730e4e709aabf1626bbdfaa77.jpg`}
-          className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+          className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isEnded ? 'grayscale opacity-70' : ''}`}
           alt={trip.title}
         />
+
+        {/* Category Badge - On Image (Top Right) */}
+        {trip.category && (
+          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg text-[10px] font-bold shadow-sm border border-white/50 flex items-center gap-1 z-10 text-black">
+            <span>{categoryData?.emoji || '✨'}</span>
+            <span>{trip.category}</span>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 space-y-3 md:space-y-4">
-        <div className="flex items-center gap-4">
-          <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+      <div className="flex-1 flex flex-col pt-4 md:pt-0">
+        <div className="flex items-center gap-4 mb-3">
+          <span className={`text-[10px] font-bold uppercase tracking-widest ${isEnded ? 'text-gray-400' : 'text-indigo-500'}`}>
             {formatDateThai(trip.startDate)}
           </span>
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-black text-black leading-tight tracking-tighter">
+        <h3 className={`text-2xl font-black leading-tight tracking-tighter mb-2 ${isEnded ? 'text-gray-400 line-through decoration-2' : 'text-black'}`}>
           {trip.title}
         </h3>
 
-        <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">
+        <p className="text-gray-400 font-bold text-sm uppercase tracking-widest mb-1">
           {trip.destination}
         </p>
 
-        <p className="text-gray-500 leading-relaxed font-medium line-clamp-2 max-w-xl text-sm">
+        <p className="text-gray-500 leading-relaxed font-medium line-clamp-2 max-w-xl text-sm mb-4">
           {trip.description}
         </p>
 
-        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-          <div className="flex items-center gap-4">
+        <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50 w-full">
+          <div className="flex items-center gap-2 md:gap-3">
             {participantCount > 0 ? (
               <>
                 <div className="flex -space-x-3">
@@ -73,19 +131,19 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
                     </div>
                   ))}
                 </div>
-                <span className="text-[11px] font-bold text-black">
+                <span className="text-[10px] md:text-[11px] font-bold text-black whitespace-nowrap">
                   {participantCount} คนเข้าร่วม
                 </span>
               </>
             ) : (
-              <span className="text-[11px] font-medium text-gray-400">
+              <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap">
                 ยังไม่มีคนเข้าร่วม
               </span>
             )}
           </div>
 
-          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest group-hover:gap-4 transition-all">
-            ดูรายละเอียด <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+          <span className="flex items-center gap-1 md:gap-2 text-[10px] md:text-[11px] font-bold text-black uppercase tracking-widest group-hover:translate-x-2 transition-all whitespace-nowrap ml-4">
+            ดูรายละเอียด <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
           </span>
         </div>
       </div>

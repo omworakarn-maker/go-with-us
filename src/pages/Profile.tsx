@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
 import { TripCard } from '../components/TripCard';
 import { useAuth } from '../contexts/AuthContext';
 import { userAPI } from '../services/api';
 import { Trip } from '../types';
+import { TRIP_CATEGORIES } from '../constants/categories';
+import Loader from '../components/Loader';
 
 interface ExtendedUser {
     id: string;
     email: string;
     name: string;
     role: string;
+    interests: string[];
     createdAt: string;
     createdTrips: Trip[];
     participatedTrips: { trip: Trip }[];
 }
 
 const Profile: React.FC = () => {
-    const { logout } = useAuth();
+    const { logout, refreshUser } = useAuth();
     const [profile, setProfile] = useState<ExtendedUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -25,6 +27,8 @@ const Profile: React.FC = () => {
     const [newName, setNewName] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [newInterests, setNewInterests] = useState<string[]>([]);
+
     const [saving, setSaving] = useState(false);
 
     const [activeTab, setActiveTab] = useState<'my-trips' | 'joined-trips'>('my-trips');
@@ -40,6 +44,7 @@ const Profile: React.FC = () => {
             const data = await userAPI.getProfile();
             setProfile(data);
             setNewName(data.name);
+            setNewInterests(data.interests || []);
         } catch (error) {
             console.error('Failed to fetch profile:', error);
         } finally {
@@ -59,17 +64,21 @@ const Profile: React.FC = () => {
 
         try {
             setSaving(true);
-            const updateData: any = { name: newName };
+            const updateData: any = {
+                name: newName,
+                interests: newInterests
+            };
             if (newPassword) updateData.password = newPassword;
 
             await userAPI.updateProfile(updateData);
-            await fetchProfile();
+            await fetchProfile(); // Refresh local profile data
+            await refreshUser(); // Refresh global auth context
+
             setSuccess('บันทึกข้อมูลสำเร็จ');
             setNewPassword('');
             setConfirmPassword('');
             setIsEditing(false);
 
-            // Clear success message after 3s
             setTimeout(() => setSuccess(''), 3000);
         } catch (error) {
             console.error('Failed to update profile:', error);
@@ -79,12 +88,21 @@ const Profile: React.FC = () => {
         }
     };
 
+    const toggleInterest = (categoryLabel: string) => {
+        setNewInterests(prev => {
+            if (prev.includes(categoryLabel)) {
+                return prev.filter(i => i !== categoryLabel);
+            } else {
+                return [...prev, categoryLabel];
+            }
+        });
+    };
+
     if (loading) {
         return (
             <>
-                <Navbar />
                 <div className="flex items-center justify-center min-h-screen bg-gray-50/50">
-                    <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+                    <Loader variant="dots" />
                 </div>
             </>
         );
@@ -94,7 +112,6 @@ const Profile: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-white pb-20">
-            <Navbar />
 
             <div className="max-w-6xl mx-auto px-6 pt-32 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Profile Card - Centered */}
@@ -113,10 +130,20 @@ const Profile: React.FC = () => {
                                 <h1 className="text-3xl font-black text-gray-900 mb-1">{profile.name}</h1>
                                 <p className="text-gray-500 font-medium mb-4">{profile.email}</p>
 
-                                <div className="flex items-center justify-center gap-2 mb-8">
+                                <div className="flex flex-col items-center gap-2 mb-6">
                                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${profile.role === 'admin' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>
                                         {profile.role}
                                     </span>
+                                    {/* Display Interests - Black Theme */}
+                                    {profile.interests && profile.interests.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                                            {profile.interests.map(interest => (
+                                                <span key={interest} className="px-3 py-1 bg-black/5 text-black text-[10px] font-bold rounded-full border border-black/10">
+                                                    {interest}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 w-full max-w-xs mx-auto mb-8 border-t border-gray-100 pt-6">
@@ -162,6 +189,35 @@ const Profile: React.FC = () => {
                                     />
                                 </div>
 
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-3 mb-2 block">สิ่งที่สนใจ (เลือกได้หลายข้อ)</label>
+                                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 custom-scrollbar">
+                                        {TRIP_CATEGORIES.map(cat => {
+                                            const isSelected = newInterests.includes(cat.label);
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => toggleInterest(cat.label)}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-2 group ${isSelected
+                                                        ? 'bg-black text-white border-black shadow-md'
+                                                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                                                        }`}
+                                                >
+                                                    {isSelected && (
+                                                        <span className="w-3 h-3 bg-white text-black rounded-full flex items-center justify-center text-[8px] group-hover:bg-red-500 group-hover:text-white transition-colors">
+                                                            <span className="group-hover:hidden">✓</span>
+                                                            <span className="hidden group-hover:inline">✕</span>
+                                                        </span>
+                                                    )}
+                                                    {cat.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1 pl-1">* ระบบจะนำไปช่วยแนะนำทริปที่คุณน่าจะชอบ</p>
+                                </div>
+
                                 <div className="pt-2 border-t border-gray-100 mt-2">
                                     <p className="text-xs text-center text-gray-400 mb-4">เปลี่ยนรหัสผ่าน (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</p>
                                     <div className="space-y-3">
@@ -195,6 +251,7 @@ const Profile: React.FC = () => {
                                             setNewPassword('');
                                             setConfirmPassword('');
                                             setNewName(profile.name);
+                                            setNewInterests(profile.interests || []);
                                         }}
                                         className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all"
                                     >
@@ -212,7 +269,7 @@ const Profile: React.FC = () => {
                         )}
 
                         {success && (
-                            <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-in slide-in-from-top-2">
+                            <div className="absolute top-4 right-4 bg-black text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg animate-in slide-in-from-top-2">
                                 {success}
                             </div>
                         )}

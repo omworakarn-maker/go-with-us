@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Navbar from '../components/Navbar';
 import { Trip } from '../types';
 import { tripsAPI } from '../services/api';
 import { exploreTrips } from '../services/geminiService';
+import Loader from '../components/Loader';
 import { TripCard } from '../components/TripCard'; // Keep if used or remove if unused, but based on code below it seems used or similar
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -140,7 +140,7 @@ const Explore: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col text-[#121212]">
-      <Navbar />
+
 
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full pt-24 pb-6 px-4">
         {/* Header */}

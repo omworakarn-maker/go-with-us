@@ -211,7 +211,6 @@ const Chat: React.FC = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold">{activeConversation.user.name}</h3>
-                                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Online</span>
                                     </div>
                                 </div>
                                 <button
@@ -261,10 +260,13 @@ const Chat: React.FC = () => {
                                             )}
 
                                             <div className={`max-w-[70%] px-5 py-3 rounded-2xl text-sm ${isMe
-                                                    ? 'bg-black text-white rounded-br-sm'
-                                                    : 'bg-white text-gray-800 shadow-sm rounded-bl-sm'
+                                                ? 'bg-black text-white rounded-br-sm'
+                                                : 'bg-white text-gray-800 shadow-sm rounded-bl-sm'
                                                 }`}>
-                                                {msg.content}
+                                                <p>{msg.content}</p>
+                                                <p className={`text-[9px] mt-1 text-right ${isMe ? 'text-gray-400' : 'text-gray-400'}`}>
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
                                             </div>
                                         </div>
                                     );
@@ -294,9 +296,13 @@ const Chat: React.FC = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                            <div className="text-6xl mb-4">💬</div>
-                            <p className="font-bold">เลือกบทสนทนาเพื่อเริ่มคุย</p>
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-300">
+                            <div className="mb-4">
+                                <svg className="w-24 h-24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                                </svg>
+                            </div>
+                            <p className="font-bold text-gray-400">เลือกบทสนทนาเพื่อเริ่มคุย</p>
                         </div>
                     )}
                 </div>

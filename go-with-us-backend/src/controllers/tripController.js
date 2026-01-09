@@ -3,9 +3,22 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Get all trips with filters
-// Get all trips with filters
 export const getAllTrips = async (req, res, next) => {
     try {
+        // --- AUTO CLEANUP LOGIC ---
+        // Delete trips ended more than 1 day ago
+        const cleanupDate = new Date();
+        cleanupDate.setDate(cleanupDate.getDate() - 1); // 1 day ago
+
+        await prisma.trip.deleteMany({
+            where: {
+                endDate: {
+                    lt: cleanupDate
+                }
+            }
+        });
+        // --------------------------
+
         const { destination, category, startDate, endDate, type } = req.query;
         const userId = req.user?.userId; // Optional, might be available if using verifyToken optionally or passed
 
