@@ -1,4 +1,5 @@
 // API Base URL
+import { DayPlan } from '../types';
 // Use relative path '/api' by default so it works with both Vite proxy (local) and Vercel rewrites (prod)
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -135,16 +136,20 @@ export const authAPI = {
 
 // ==================== TRIPS API ====================
 
+
+
 export interface CreateTripData {
     title: string;
     destination: string;
     description?: string;
     startDate: string;
     endDate?: string;
-    budget?: string;
+    budget?: string | number;
     maxParticipants?: number;
     category?: string;
     imageUrl?: string;
+    gallery?: string[];
+    itinerary?: DayPlan[];
 }
 
 export interface UpdateTripData extends Partial<CreateTripData> { }

@@ -205,10 +205,27 @@ export const TripDetails: React.FC = () => {
   };
 
   const handleAIAnalysis = async () => {
+    if (itinerary.length > 0) {
+      if (!window.confirm('คุณมีแผนการเดินทางที่สร้างไว้อยู่แล้ว การวิเคราะห์ด้วย AI จะสร้างแผนใหม่ทับของเดิม\n\nต้องการดำเนินการต่อหรือไม่?')) {
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const res = await analyzeTripPlan(trip);
       setRecommendation(res);
+
+      // Auto-populate itinerary editor
+      if (res.itinerary && res.itinerary.length > 0) {
+        setItinerary(res.itinerary);
+
+        // Notify user and scroll to editor
+        setTimeout(() => {
+          alert("AI ได้ร่างแผนการเดินทางให้คุณแล้ว! คุณสามารถแก้ไขเพิ่มเติมได้ที่ส่วน 'จัดการเนื้อหา' ด้านล่าง");
+          document.getElementById('content-management')?.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+      }
     } catch (error) {
       alert("AI เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง");
     } finally {
