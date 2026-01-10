@@ -13,6 +13,12 @@ export interface Trip {
   itinerary?: DayPlan[];
   category?: string;
   creatorId?: string;
+  creator?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
   imageUrl?: string;
   gallery?: string[]; // Additional images
 }

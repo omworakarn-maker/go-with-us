@@ -88,3 +88,40 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ message: 'Error updating profile' });
     }
 };
+
+// Get all users (searchable)
+export const getAllUsers = async (req, res) => {
+    try {
+        const { search } = req.query;
+        // Don't include current user in search results? Optional, but good practice.
+        const currentUserId = req.user.userId;
+
+        const whereClause = {};
+        if (search) {
+            whereClause.name = {
+                contains: search,
+                mode: 'insensitive' // Requires PostgreSQL and Prisma config, or use lower case logic if using simple DB
+            };
+        }
+
+        // Exclude self
+        whereClause.id = { not: currentUserId };
+
+        const users = await prisma.user.findMany({
+            where: whereClause,
+            take: 20, // Limit results
+            select: {
+                id: true,
+                name: true,
+                email: true, // Maybe don't expose email publicly? Keeping it for now as unique ID reference
+                // Avatar?
+            },
+            orderBy: { name: 'asc' }
+        });
+
+        res.json(users);
+    } catch (error) {
+        console.error('Get all users error:', error);
+        res.status(500).json({ message: 'Error fetching users' });
+    }
+};

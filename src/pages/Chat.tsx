@@ -165,8 +165,34 @@ const Chat: React.FC = () => {
             <div className="flex-1 max-w-6xl mx-auto w-full pt-20 pb-4 px-4 flex gap-6 h-[calc(100vh-2rem)]">
                 {/* Sidebar - Conversation List */}
                 <div className={`w-full md:w-80 flex flex-col border-r border-gray-100 ${isMobileView && activeConversation ? 'hidden' : 'block'}`}>
-                    <div className="py-4 px-2 border-b border-gray-100">
+                    <div className="py-4 px-2 border-b border-gray-100 flex items-center justify-between">
                         <h2 className="text-2xl font-black">Messages</h2>
+                    </div>
+                    {/* Search Bar */}
+                    <div className="p-2 border-b border-gray-100">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="ค้นหาบทสนทนา..."
+                                className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-black outline-none transition-all"
+                                onChange={(e) => {
+                                    const query = e.target.value.toLowerCase();
+                                    // Simple client-side filter for now
+                                    const items = document.querySelectorAll('.conversation-item');
+                                    items.forEach((item: any) => {
+                                        const name = item.dataset.name?.toLowerCase() || '';
+                                        if (name.includes(query)) {
+                                            item.style.display = 'flex';
+                                        } else {
+                                            item.style.display = 'none';
+                                        }
+                                    });
+                                }}
+                            />
+                            <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
                     </div>
                     <div className="flex-1 overflow-y-auto no-scrollbar py-2">
                         {conversations.length === 0 ? (
@@ -176,10 +202,11 @@ const Chat: React.FC = () => {
                                 <button
                                     key={conv.user.id}
                                     onClick={() => setActiveConversation(conv)}
-                                    className={`w-full text-left p-4 rounded-xl flex items-center gap-3 transition-all mb-2 ${activeConversation?.user.id === conv.user.id
+                                    className={`w-full text-left p-4 rounded-xl flex items-center gap-3 transition-all mb-2 conversation-item ${activeConversation?.user.id === conv.user.id
                                         ? 'bg-gray-50'
                                         : 'hover:bg-gray-50'
                                         }`}
+                                    data-name={conv.user.name}
                                 >
                                     <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-lg flex-shrink-0">
                                         {conv.user.name.charAt(0).toUpperCase()}

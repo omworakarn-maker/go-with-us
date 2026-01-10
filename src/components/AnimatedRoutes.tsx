@@ -12,6 +12,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Profile from '../pages/Profile';
 import Chat from '../pages/Chat';
+import SearchPage from '../pages/Search';
 import { TripDetails } from './TripDetails';
 import { CreateTripModal } from './CreateTripModal';
 import ProtectedRoute from './ProtectedRoute';
@@ -173,6 +174,7 @@ const AnimatedRoutes: React.FC = () => {
                             </ProtectedRoute>
                         }
                     />
+                    <Route path="/search" element={<SearchPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </AnimatePresence>

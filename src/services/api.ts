@@ -281,6 +281,7 @@ export const userAPI = {
         method: 'PUT',
         body: JSON.stringify(data),
     }),
+    getAll: (search?: string) => authFetch(`${API_BASE_URL}/users${search ? `?search=${search}` : ''}`),
 };
 
 export default {

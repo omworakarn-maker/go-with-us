@@ -11,6 +11,7 @@ import { TRIP_CATEGORIES } from '../constants/categories';
 import { GalleryManager } from './GalleryManager';
 import { ItineraryEditor } from './ItineraryEditor';
 import Loader from './Loader';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formatBudget = (budget: number | string): string => {
   const num = Number(budget);
@@ -42,6 +43,9 @@ export const TripDetails: React.FC = () => {
   const [joining, setJoining] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // Added showDeleteModal state
   const [updating, setUpdating] = useState(false);
 
   // Gallery and Itinerary state
@@ -234,28 +238,33 @@ export const TripDetails: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
-    const message = isAdmin && !isCreator
-      ? '⚠️ คุณกำลังใช้สิทธิ์ Admin ลบกิจกรรมนี้\n\nการกระทำนี้ไม่สามารถย้อนกลับได้\nต้องการดำเนินการต่อหรือไม่?'
-      : 'คุณต้องการลบกิจกรรมนี้ใช่หรือไม่?\n\nการกระทำนี้ไม่สามารถย้อนกลับได้';
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
 
-    if (window.confirm(message)) {
-      try {
-        await tripsAPI.delete(trip!.id);
-        navigate('/');
-      } catch (error: any) {
-        console.error('Failed to delete trip:', error);
-        alert('ไม่สามารถลบกิจกรรมได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
-      }
+  const confirmDeleteTrip = async () => {
+    try {
+      await tripsAPI.delete(trip!.id);
+      navigate('/');
+    } catch (error: any) {
+      console.error('Failed to delete trip:', error);
+      alert('ไม่สามารถลบกิจกรรมได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
     }
   };
 
-  const handleJoinTrip = async () => {
-    if (!user || !trip) {
+
+
+  const handleJoinTrip = () => {
+    if (!user) {
       alert('กรุณาเข้าสู่ระบบก่อนเข้าร่วมกิจกรรม');
       navigate('/login');
       return;
     }
+    setShowJoinModal(true);
+  };
+
+  const confirmJoinTrip = async () => {
+    if (!user || !trip) return;
 
     try {
       setJoining(true);
@@ -267,6 +276,7 @@ export const TripDetails: React.FC = () => {
       // Refresh trip data
       const response = await tripsAPI.getById(trip.id);
       setTrip(response.trip);
+      setShowJoinModal(false);
     } catch (error: any) {
       console.error('Failed to join trip:', error);
       alert(error.message || 'ไม่สามารถเข้าร่วมกิจกรรมได้');
@@ -275,23 +285,27 @@ export const TripDetails: React.FC = () => {
     }
   };
 
-  const handleLeaveTrip = async () => {
+  const handleLeaveTrip = () => {
+    if (!trip) return;
+    setShowLeaveModal(true);
+  };
+
+  const confirmLeaveTrip = async () => {
     if (!trip) return;
 
-    if (window.confirm('คุณต้องการออกจากกิจกรรมนี้ใช่หรือไม่?')) {
-      try {
-        setJoining(true);
-        await tripsAPI.leave(trip.id);
+    try {
+      setJoining(true); // Re-using joining state for loading indicator
+      await tripsAPI.leave(trip.id);
 
-        // Refresh trip data
-        const response = await tripsAPI.getById(trip.id);
-        setTrip(response.trip);
-      } catch (error: any) {
-        console.error('Failed to leave trip:', error);
-        alert(error.message || 'ไม่สามารถออกจากกิจกรรมได้');
-      } finally {
-        setJoining(false);
-      }
+      // Refresh trip data
+      const response = await tripsAPI.getById(trip.id);
+      setTrip(response.trip);
+      setShowLeaveModal(false);
+    } catch (error: any) {
+      console.error('Failed to leave trip:', error);
+      alert(error.message || 'ไม่สามารถออกจากกิจกรรมได้');
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -557,6 +571,10 @@ export const TripDetails: React.FC = () => {
               <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4">ข้อมูลทริป</h2>
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">ผู้สร้างทริป</span>
+                  <span className="font-medium">{trip.creator?.name || 'ไม่ระบุ'}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-400">งบประมาณ</span>
                   <span className="font-medium">{formatBudget(trip.budget)}</span>
                 </div>
@@ -648,6 +666,142 @@ export const TripDetails: React.FC = () => {
             onClose={() => setShowChat(false)}
           />
         )}
+
+
+
+        {/* Join Confirmation Modal */}
+        <AnimatePresence>
+          {showJoinModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
+              >
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">ยืนยันเข้าร่วม?</h3>
+                <p className="text-gray-500 mb-8">
+                  คุณต้องการเข้าร่วมทริป "{trip.title}" ใช่หรือไม่
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowJoinModal(false)}
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={confirmJoinTrip}
+                    className="flex-1 py-3 px-4 rounded-xl bg-black text-white font-bold hover:bg-gray-800 transition-all shadow-lg"
+                  >
+                    ยืนยัน
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Leave Confirmation Modal */}
+        <AnimatePresence>
+          {showLeaveModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
+              >
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">ยืนยันออกจากทริป?</h3>
+                <p className="text-gray-500 mb-8">
+                  คุณต้องการออกจากทริป "{trip.title}" ใช่หรือไม่
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowLeaveModal(false)}
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={confirmLeaveTrip}
+                    className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg"
+                  >
+                    ออกเลย
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {showDeleteModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
+              >
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">
+                  {isAdmin && !isCreator ? 'Admin: ลบกิจกรรมนี้?' : 'ลบกิจกรรมนี้?'}
+                </h3>
+                <p className="text-gray-500 mb-8">
+                  การลบกิจกรรมไม่สามารถย้อนกลับได้ ข้อมูลทั้งหมดจะหายไป
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={confirmDeleteTrip}
+                    className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg"
+                  >
+                    ลบทันที
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Edit Trip Modal */}
         {showEditModal && (
