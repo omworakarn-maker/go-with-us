@@ -28,18 +28,17 @@ const PAGE_ORDER: { [key: string]: number } = {
 
 const AnimatedRoutes: React.FC = () => {
     const location = useLocation();
-    const [direction, setDirection] = React.useState(0);
-    const [prevPath, setPrevPath] = React.useState(location.pathname);
+    const prevPath = React.useRef(location.pathname);
+    const direction = React.useRef(0);
 
-    React.useEffect(() => {
-        // Only calculate direction for main nav pages
-        if (PAGE_ORDER[location.pathname] !== undefined && PAGE_ORDER[prevPath] !== undefined) {
-            setDirection(PAGE_ORDER[location.pathname] - PAGE_ORDER[prevPath]);
+    if (location.pathname !== prevPath.current) {
+        if (PAGE_ORDER[location.pathname] !== undefined && PAGE_ORDER[prevPath.current] !== undefined) {
+            direction.current = PAGE_ORDER[location.pathname] - PAGE_ORDER[prevPath.current];
         } else {
-            setDirection(0); // Default for other pages (fade/zoom only)
+            direction.current = 0; // Default for other pages (fade/zoom only)
         }
-        setPrevPath(location.pathname);
-    }, [location.pathname, prevPath]);
+        prevPath.current = location.pathname;
+    }
 
     // Animation Variants
     const pageVariants = {
@@ -73,18 +72,18 @@ const AnimatedRoutes: React.FC = () => {
             <CreateTripModal />
             {showNavbar && <Navbar />} {/* Fixed Navbar outside AnimatePresence */}
 
-            <AnimatePresence mode="wait" custom={direction}>
+            <AnimatePresence mode="wait" custom={direction.current}>
                 <Routes location={location} key={location.pathname}>
                     <Route
                         path="/"
                         element={
                             <motion.div
-                                custom={direction}
+                                custom={direction.current}
                                 variants={pageVariants}
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="w-full h-full"
+                                className="w-full h-full min-h-screen"
                             >
                                 <Home />
                             </motion.div>
@@ -106,12 +105,12 @@ const AnimatedRoutes: React.FC = () => {
                         path="/explore"
                         element={
                             <motion.div
-                                custom={direction}
+                                custom={direction.current}
                                 variants={pageVariants}
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="w-full h-full"
+                                className="w-full h-full min-h-screen"
                             >
                                 <Explore />
                             </motion.div>
@@ -121,12 +120,12 @@ const AnimatedRoutes: React.FC = () => {
                         path="/activities"
                         element={
                             <motion.div
-                                custom={direction}
+                                custom={direction.current}
                                 variants={pageVariants}
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="w-full h-full"
+                                className="w-full h-full min-h-screen"
                             >
                                 <Activities />
                             </motion.div>
@@ -136,12 +135,12 @@ const AnimatedRoutes: React.FC = () => {
                         path="/mytrips"
                         element={
                             <motion.div
-                                custom={direction}
+                                custom={direction.current}
                                 variants={pageVariants}
                                 initial="initial"
                                 animate="animate"
                                 exit="exit"
-                                className="w-full h-full"
+                                className="w-full h-full min-h-screen"
                             >
                                 <MyTrips />
                             </motion.div>
@@ -154,12 +153,12 @@ const AnimatedRoutes: React.FC = () => {
                         element={
                             <ProtectedRoute>
                                 <motion.div
-                                    custom={direction}
+                                    custom={direction.current}
                                     variants={pageVariants}
                                     initial="initial"
                                     animate="animate"
                                     exit="exit"
-                                    className="w-full h-full"
+                                    className="w-full h-full min-h-screen"
                                 >
                                     <Profile />
                                 </motion.div>
