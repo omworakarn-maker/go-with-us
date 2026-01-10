@@ -34,7 +34,10 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDateClick = () => {
+  const handleDateClick = (e: React.MouseEvent) => {
+    // Prevent recursion/loops if the click originated from the hidden input itself
+    if (e.target === dateInputRef.current) return;
+
     if (dateInputRef.current) {
       if ('showPicker' in dateInputRef.current) {
         (dateInputRef.current as any).showPicker();
@@ -116,6 +119,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 md:pointer-events-none"
         />
       </div>

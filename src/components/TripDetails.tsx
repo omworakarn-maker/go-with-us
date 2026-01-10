@@ -301,8 +301,7 @@ export const TripDetails: React.FC = () => {
 
       {/* Admin Badge - Adjusted position */}
       {isAdmin && (
-        <div className="fixed top-24 left-6 z-40 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-lg animate-in fade-in duration-300 flex items-center gap-2">
-          <span>👑</span>
+        <div className="fixed top-24 left-6 z-40 px-4 py-2 bg-black text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-lg animate-in fade-in duration-300 flex items-center gap-2">
           <span>Admin</span>
         </div>
       )}
@@ -393,8 +392,8 @@ export const TripDetails: React.FC = () => {
               </div>
             )}
 
-            {/* Itinerary Creation Section - Only for Creator */}
-            {isCreator && !recommendation && !loading && (
+            {/* Itinerary Creation Section - Only for Creator OR Admin */}
+            {(isCreator || isAdmin) && !recommendation && !loading && (
               <div className="flex flex-col items-center justify-center p-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">สร้างแผนการเดินทาง</h3>
                 <p className="text-sm text-gray-500 text-center mb-8 max-w-md">
@@ -441,8 +440,8 @@ export const TripDetails: React.FC = () => {
               </div>
             )}
 
-            {/* Display Custom Itinerary - For Everyone */}
-            {trip.itinerary && trip.itinerary.length > 0 && (
+            {/* Display Custom Itinerary - For Everyone EXCEPT Creator/Admin (who use the editor) */}
+            {trip.itinerary && trip.itinerary.length > 0 && !(isCreator || isAdmin) && (
               <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
                 <section>
                   <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-6">แผนการเดินทาง</h2>
@@ -511,8 +510,8 @@ export const TripDetails: React.FC = () => {
               </div>
             )}
 
-            {/* Content Management Section - Only for Creator */}
-            {isCreator && (
+            {/* Content Management Section - Only for Creator OR Admin */}
+            {(isCreator || isAdmin) && (
               <div id="content-management" className="space-y-8 bg-white rounded-3xl p-8 border border-gray-100 shadow-sm scroll-mt-24">
                 <div className="flex items-center justify-between mb-6">
                   <div>
