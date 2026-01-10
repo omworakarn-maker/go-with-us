@@ -119,8 +119,18 @@ const FilterBar: React.FC<FilterBarProps> = ({
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 md:pointer-events-none"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Force picker to open on click (especially for Desktop)
+            if (e.currentTarget && 'showPicker' in e.currentTarget) {
+              try {
+                (e.currentTarget as any).showPicker();
+              } catch (err) {
+                // Ignore errors if picker is already open or blocked
+              }
+            }
+          }}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
       </div>
 

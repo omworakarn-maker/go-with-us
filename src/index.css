@@ -10,6 +10,13 @@
 
     body {
         @apply bg-white text-black;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button,
+    [role="button"] {
+        cursor: pointer;
+        touch-action: manipulation;
     }
 }
 
