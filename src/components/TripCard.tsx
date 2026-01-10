@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trip } from '../types';
 import { TRIP_CATEGORIES } from '../constants/categories';
+import defaultTripImage from '../assets/Sosuke.jpg';
 
 interface TripCardProps {
   trip: Trip;
@@ -68,7 +69,7 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
     >
       <div className="w-full md:w-48 h-40 md:h-auto min-h-[160px] rounded-2xl overflow-hidden bg-gray-50 shrink-0 relative">
         <img
-          src={trip.imageUrl || `https://i.pinimg.com/736x/b1/e0/50/b1e0509730e4e709aabf1626bbdfaa77.jpg`}
+          src={trip.imageUrl || defaultTripImage}
           className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isEnded ? 'grayscale opacity-70' : ''}`}
           alt={trip.title}
         />

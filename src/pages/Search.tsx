@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { tripsAPI, userAPI } from '../services/api';
 import { Trip, Participant } from '../types';
+import defaultTripImage from '../assets/Sosuke.jpg';
 
 const SearchPage: React.FC = () => {
     const navigate = useNavigate();
@@ -116,7 +117,7 @@ const SearchPage: React.FC = () => {
                                         <div key={trip.id} className="group bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all hover:-translate-y-1">
                                             <div className="aspect-[4/3] bg-gray-200 relative overflow-hidden">
                                                 <img
-                                                    src={trip.imageUrl || `https://source.unsplash.com/random/400x300/?${trip.category}`}
+                                                    src={trip.imageUrl || defaultTripImage}
                                                     alt={trip.title}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 />
