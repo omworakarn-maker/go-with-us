@@ -250,7 +250,7 @@ export const CreateTripModal: React.FC = () => {
                                         >
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <label className="text-sm font-bold text-gray-700">เริ่มวันที่</label>
+                                                    <label className="text-sm font-bold text-gray-700">เริ่มวันที่ (จำเป็นต้องเลือก)</label>
                                                     <input
                                                         required
                                                         type="date"
@@ -398,7 +398,10 @@ export const CreateTripModal: React.FC = () => {
                                 {step < 3 ? (
                                     <button
                                         onClick={nextStep}
-                                        disabled={!newTrip.title} // Example validation
+                                        disabled={
+                                            (step === 1 && !newTrip.title) ||
+                                            (step === 2 && !newTrip.startDate)
+                                        }
                                         className="flex-1 px-6 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 transition-all shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed"
                                         type="button"
                                     >

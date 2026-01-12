@@ -16,35 +16,77 @@ export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => 
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
   const prompt = `
-    ในบทบาทของคุณที่เป็นผู้เชี่ยวชาญด้านการจัดทริปท่องเที่ยวภายในประเทศไทย จงวิเคราะห์กิจกรรมกลุ่มนี้และเสนอแผนการเดินทางที่ออกแบบมาโดยเฉพาะตามความสนใจของสมาชิกทุกคน
+    ในบทบาทของคุณที่เป็นผู้เชี่ยวชาญด้านการจัดทริปท่องเที่ยวภายในประเทศไทย จงวิเคราะห์ข้อมูลทริปต่อไปนี้และสร้างแผนการเดินทางให้:
 
     ข้อมูลทริป:
     ชื่อทริป: ${trip.title}
-    จุดหมายในไทย: ${trip.destination}
-    ระยะเวลา: ${trip.startDate} ถึง ${trip.endDate}
-    งบประมาณ: ${trip.budget}
-    สมาชิกในกลุ่ม: ${JSON.stringify(trip.participants)}
+    จุดหมาย: ${trip.destination}
+    วันที่: ${trip.startDate} - ${trip.endDate}
+    งบประมาณ: ${trip.budget} บาท
+    สมาชิก: ${JSON.stringify(trip.participants)}
     
-    ข้อกำหนด:
-    1. แผนการเดินทางต้องเป็นภาษาไทยทั้งหมด และแนะนำสถานที่ที่อยู่ในประเทศไทยเท่านั้น
-    2. ออกแบบให้มีความเรียบหรู แต่ยังคงความมินิมอล (Luxury Minimalist)
-    3. เน้นความลงตัวของกลุ่ม (Group Harmony) และประสบการณ์คุณภาพสูง
-    4. คำสรุป (Summary) ต้องมีความสละสลวยและสร้างแรงบันดาลใจให้คนอยากไปเที่ยวเมืองไทย
-    5. ตอบกลับเป็น JSON เท่านั้น
+    โจทย์ของคุณ:
+    1. วิเคราะห์ความสนใจของกลุ่ม (groupAnalysis)
+    2. เขียนสรุปภาพรวมของทริปให้น่าสนใจ (summary)
+    3. สร้างแผนการเดินทางละเอียด (itinerary) ตามจำนวนวันที่ระบุ
+    4. **ห้ามใช้อีโมจิใดๆ ทั้งสิ้น** (Do NOT use emojis anywhere in the response) ให้ใช้เพียงตัวอักษรเท่านั้น เพราะเราต้องการดีไซน์ที่เรียบง่าย
+
+
+    Strictly Response in JSON format ONLY with this structure:
+    {
+      "summary": "ข้อความสรุป...",
+      "groupAnalysis": "วิเคราะห์กลุ่ม...",
+      "itinerary": [
+        {
+          "day": 1,
+          "activities": [
+            {
+              "time": "09:00",
+              "name": "ชื่อกิจกรรม",
+              "location": "สถานที่",
+              "description": "รายละเอียด"
+            }
+          ]
+        }
+      ]
+    }
   `;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  let text = response.text();
-
-  // Clean JSON string
-  text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
   try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text();
+
+    // Clean JSON string
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(text);
   } catch (error) {
-    console.error("Failed to parse AI response", error);
-    throw new Error("Could not generate Thai trip analysis.");
+    console.error("AI Analysis Failed:", error);
+
+    // Fallback Mock Data if AI fails
+    return {
+      summary: "ขออภัย ระบบ AI ไม่สามารถใช้งานได้ในขณะนี้ (Quota Exceeded/Error) แต่นี่คือแผนการเดินทางเบื้องต้นที่เราแนะนำสำหรับคุณ",
+      groupAnalysis: "เหมาะสำหรับทุกเพศทุกวัย เน้นการพักผ่อนและถ่ายรูป",
+      itinerary: [
+        {
+          day: 1,
+          activities: [
+            { time: "09:00", name: "เดินทางถึงที่หมาย", location: trip.destination, description: "เช็คอินเข้าที่พักและพักผ่อนตามอัธยาศัย" },
+            { time: "12:00", name: "รับประทานอาหารกลางวัน", location: "ร้านแนะนำในพื้นที่", description: "ลิ้มลองอาหารท้องถิ่นขึ้นชื่อ" },
+            { time: "15:00", name: "ชมแลนด์มาร์คสำคัญ", location: trip.destination, description: "เยี่ยมชมสถานที่ท่องเที่ยวยอดนิยม" },
+            { time: "18:00", name: "อาหารเย็น", location: "Night Market", description: "เดินเล่นหาของกินยามค่ำคืน" }
+          ]
+        },
+        {
+          day: 2,
+          activities: [
+            { time: "09:00", name: "ตื่นเช้ารับอากาศสดใส", location: trip.destination, description: "สูดอากาศบริสุทธิ์พร้อมกาแฟยามเช้า" },
+            { time: "10:30", name: "กิจกรรมผจญภัย", location: "อุทยานแห่งชาติ/สถานที่ธรรมชาติ", description: "เดินป่า ชมน้ำตก หรือกิจกรรม outdoor" },
+            { time: "16:00", name: "Cafe Hopping", location: "คาเฟ่ยอดฮิต", description: "ถ่ายรูปสวยๆ ลงโซเชียล" }
+          ]
+        }
+      ]
+    };
   }
 };
 

@@ -47,11 +47,14 @@ export const TripDetails: React.FC = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false); // Added showDeleteModal state
   const [updating, setUpdating] = useState(false);
+  // Delete state - moved to top level to avoid hook order errors
+  const [deleting, setDeleting] = useState(false);
 
   // Gallery and Itinerary state
   const [gallery, setGallery] = useState<string[]>([]);
   const [itinerary, setItinerary] = useState<DayPlan[]>([]);
   const [savingContent, setSavingContent] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -64,6 +67,8 @@ export const TripDetails: React.FC = () => {
     maxParticipants: 10,
     category: '',
   });
+
+  const [showAIConfirmModal, setShowAIConfirmModal] = useState(false);
 
   // Fetch trip data on mount
   useEffect(() => {
@@ -200,21 +205,30 @@ export const TripDetails: React.FC = () => {
       setGallery(response.trip.gallery || []);
       setItinerary(response.trip.itinerary || []);
 
-      alert('บันทึกรูปภาพและแผนการเดินทางสำเร็จ!');
+      setNotification({ message: 'บันทึกรูปภาพและแผนการเดินทางสำเร็จ', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
     } catch (error: any) {
       console.error('Failed to save content:', error);
-      alert('ไม่สามารถบันทึกได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
+      setNotification({ message: 'ไม่สามารถบันทึกได้: ' + (error.message || 'เกิดข้อผิดพลาด'), type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
     } finally {
       setSavingContent(false);
     }
   };
 
-  const handleAIAnalysis = async () => {
+
+
+  const handleAIAnalysis = () => {
     if (itinerary.length > 0) {
-      if (!window.confirm('คุณมีแผนการเดินทางที่สร้างไว้อยู่แล้ว การวิเคราะห์ด้วย AI จะสร้างแผนใหม่ทับของเดิม\n\nต้องการดำเนินการต่อหรือไม่?')) {
-        return;
-      }
+      setShowAIConfirmModal(true);
+      return;
     }
+    confirmRunAI();
+  };
+
+  const confirmRunAI = async () => {
+    setShowAIConfirmModal(false);
+    if (!trip) return;
 
     setLoading(true);
     try {
@@ -226,17 +240,21 @@ export const TripDetails: React.FC = () => {
         setItinerary(res.itinerary);
 
         // Notify user and scroll to editor
+        setNotification({ message: 'AI ได้ร่างแผนการเดินทางให้คุณแล้ว', type: 'success' });
         setTimeout(() => {
-          alert("AI ได้ร่างแผนการเดินทางให้คุณแล้ว! คุณสามารถแก้ไขเพิ่มเติมได้ที่ส่วน 'จัดการเนื้อหา' ด้านล่าง");
+          setNotification(null);
           document.getElementById('content-management')?.scrollIntoView({ behavior: 'smooth' });
-        }, 500);
+        }, 2000);
       }
     } catch (error) {
-      alert("AI เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง");
+      setNotification({ message: 'AI เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง', type: 'error' });
+      setTimeout(() => setNotification(null), 3000);
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleDelete = () => {
     setShowDeleteModal(true);
@@ -244,11 +262,15 @@ export const TripDetails: React.FC = () => {
 
   const confirmDeleteTrip = async () => {
     try {
+      setDeleting(true);
+      // Add a slight delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
       await tripsAPI.delete(trip!.id);
       navigate('/');
     } catch (error: any) {
       console.error('Failed to delete trip:', error);
       alert('ไม่สามารถลบกิจกรรมได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
+      setDeleting(false);
     }
   };
 
@@ -312,6 +334,32 @@ export const TripDetails: React.FC = () => {
   return (
     <>
 
+
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: -50, x: '-50%' }}
+            className={`fixed top-24 left-1/2 z-[100] px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md ${notification.type === 'success'
+              ? 'bg-white/90 text-black border border-gray-200'
+              : 'bg-red-500/90 text-white border border-red-400'
+              }`}
+          >
+            {notification.type === 'success' ? (
+              <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+              </div>
+            ) : (
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </div>
+            )}
+            <span className="font-bold text-sm tracking-wide">{notification.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Badge - Adjusted position */}
       {isAdmin && (
@@ -492,7 +540,17 @@ export const TripDetails: React.FC = () => {
             {recommendation && (
               <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-700">
                 <section>
-                  <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4">มุมมองจาก AI</h2>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold">มุมมองจาก AI</h2>
+                    <button
+                      onClick={handleAIAnalysis}
+                      disabled={loading}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1 bg-indigo-50 px-3 py-2 rounded-full hover:bg-indigo-100"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                      {loading ? 'กำลังวิเคราะห์...' : 'วิเคราะห์ใหม่'}
+                    </button>
+                  </div>
                   <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-indigo-900 leading-relaxed italic">
                     "{recommendation.summary}"
                   </div>
@@ -500,12 +558,12 @@ export const TripDetails: React.FC = () => {
                 <section>
                   <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-6">แผนการเดินทาง</h2>
                   <div className="space-y-8">
-                    {recommendation.itinerary.map((day) => (
+                    {recommendation.itinerary?.map((day) => (
                       <div key={day.day} className="relative pl-8 border-l border-gray-100">
                         <div className="absolute left-[-9px] top-0 w-4 h-4 bg-black rounded-full border-4 border-white"></div>
                         <h3 className="text-lg font-bold text-gray-900 mb-6">วันที่ {day.day}</h3>
                         <div className="space-y-6">
-                          {day.activities.map((act, i) => (
+                          {day.activities?.map((act, i) => (
                             <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                               <span className="text-[10px] font-bold text-gray-500 uppercase">{act.time}</span>
                               <h4 className="text-md font-medium text-gray-900 mt-1">{act.name}</h4>
@@ -787,15 +845,69 @@ export const TripDetails: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all"
+                    disabled={deleting}
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ยกเลิก
                   </button>
                   <button
                     onClick={confirmDeleteTrip}
-                    className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg"
+                    disabled={deleting}
+                    className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    ลบทันที
+                    {deleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        กำลังลบ...
+                      </>
+                    ) : (
+                      'ลบทันที'
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* AI Re-analysis Confirmation Modal */}
+        <AnimatePresence>
+          {showAIConfirmModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center"
+              >
+
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">สร้างแผนใหม่?</h3>
+                <p className="text-gray-500 mb-8">
+                  แผนการเดินทางเดิมจะถูกเขียนทับ คุณแน่ใจหรือไม่ที่จะให้ AI วิเคราะห์ใหม่
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAIConfirmModal(false)}
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-100 font-bold text-gray-600 hover:border-gray-300 hover:text-black transition-all"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={confirmRunAI}
+                    className="flex-1 py-3 px-4 rounded-xl bg-black text-white font-bold hover:bg-gray-800 transition-all shadow-lg"
+                  >
+                    วิเคราะห์เลย
                   </button>
                 </div>
               </motion.div>

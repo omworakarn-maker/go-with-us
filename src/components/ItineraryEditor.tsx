@@ -17,6 +17,7 @@ export const ItineraryEditor: React.FC<ItineraryEditorProps> = ({ itinerary, onU
 
     // Edit State
     const [editingActivity, setEditingActivity] = useState<{ dayIndex: number; actIndex: number } | null>(null);
+    const [deletingActivity, setDeletingActivity] = useState<{ dayIndex: number; actIndex: number } | null>(null);
     const [editForm, setEditForm] = useState<Activity>({
         time: '',
         name: '',
@@ -51,6 +52,7 @@ export const ItineraryEditor: React.FC<ItineraryEditorProps> = ({ itinerary, onU
     };
 
     const removeDay = (dayIndex: number) => {
+        if (!window.confirm('คุณต้องการลบวันนี้และกิจกรรมทั้งหมดในวันนี้ใช่หรือไม่?')) return;
         const newItinerary = itinerary
             .filter((_, i) => i !== dayIndex)
             .map((day, i) => ({ ...day, day: i + 1 }));
@@ -71,10 +73,17 @@ export const ItineraryEditor: React.FC<ItineraryEditorProps> = ({ itinerary, onU
         setEditingDay(null);
     };
 
-    const removeActivity = (dayIndex: number, activityIndex: number) => {
+    const removeActivity = async (dayIndex: number, activityIndex: number) => {
+        setDeletingActivity({ dayIndex, actIndex: activityIndex });
+
+        // Simulate processing delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         const newItinerary = [...itinerary];
         newItinerary[dayIndex].activities = newItinerary[dayIndex].activities.filter((_, i) => i !== activityIndex);
         onUpdate(newItinerary);
+
+        setDeletingActivity(null);
     };
 
     return (
@@ -117,6 +126,18 @@ export const ItineraryEditor: React.FC<ItineraryEditorProps> = ({ itinerary, onU
                             <div className="space-y-3 mb-4">
                                 {day.activities.map((activity, actIndex) => {
                                     const isEditing = editingActivity?.dayIndex === dayIndex && editingActivity?.actIndex === actIndex;
+                                    const isDeleting = deletingActivity?.dayIndex === dayIndex && deletingActivity?.actIndex === actIndex;
+
+                                    if (isDeleting) {
+                                        return (
+                                            <div key={actIndex} className="bg-red-50 p-4 rounded-2xl border border-red-200 flex items-center justify-center min-h-[100px] shadow-sm transition-all duration-300">
+                                                <div className="flex flex-col items-center gap-2 animate-pulse">
+                                                    <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                                    <span className="text-sm font-bold text-red-500">กำลังลบ...</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
                                     return (
                                         <div key={actIndex} className={`bg-white p-4 rounded-2xl border ${isEditing ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-100'} relative group transition-all`}>
@@ -168,7 +189,7 @@ export const ItineraryEditor: React.FC<ItineraryEditorProps> = ({ itinerary, onU
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={() => startEditing(dayIndex, actIndex, activity)}
                                                             className="w-6 h-6 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 flex items-center justify-center text-xs"
