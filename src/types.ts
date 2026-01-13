@@ -21,6 +21,8 @@ export interface Trip {
   };
   imageUrl?: string;
   gallery?: string[]; // Additional images
+  summary?: string;
+  groupAnalysis?: string;
 }
 
 export interface User {

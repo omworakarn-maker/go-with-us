@@ -16,7 +16,7 @@ import AnimatedRoutes from './components/AnimatedRoutes';
 
 const AppRouter: React.FC = () => {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ModalProvider>
         <AnimatedRoutes />
       </ModalProvider>

@@ -45,6 +45,8 @@ model Trip {
   creatorId       String   @map("creator_id")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  summary         String?  @db.Text
+  groupAnalysis   String?  @db.Text
   
   // Relations
   creator      User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)

@@ -120,8 +120,13 @@ export const GroupChat: React.FC<GroupChatProps> = ({ tripId, tripTitle, onClose
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {loading && messages.length === 0 && (
-                    <div className="flex items-center justify-center py-8">
-                        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                        <div className="flex space-x-2">
+                            <div className="w-3 h-3 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-3 h-3 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-3 h-3 bg-gray-300 rounded-full animate-bounce"></div>
+                        </div>
+                        <span className="text-xs text-gray-400 font-medium tracking-widest uppercase">กำลังโหลดข้อความ</span>
                     </div>
                 )}
 

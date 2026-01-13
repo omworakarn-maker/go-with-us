@@ -84,17 +84,36 @@ export const CreateTripModal: React.FC = () => {
                 imageUrl: newTrip.imageUrl,
             };
 
-            await tripsAPI.create(createData);
+            const response: any = await tripsAPI.create(createData);
 
-            setNewTrip({
-                title: '', destination: PROVINCES[1], description: '',
-                startDate: '', endDate: '', category: TRIP_CATEGORIES[0].label,
-                budget: 1000, maxParticipants: 10, imageUrl: ''
-            });
-            setImagePreview('');
-            setStep(1); // Reset step
-            closeCreateModal();
-            window.location.reload();
+            // Debugging
+            // console.log('Create Trip Response:', response);
+            // alert('Debug: ' + JSON.stringify(response));
+
+            // Handle different response structures checking for common patterns
+            const tripData = response?.trip || response?.data || response;
+            const tripId = tripData?.id || tripData?._id;
+
+            if (tripId) {
+                // Success case
+                setNewTrip({
+                    title: '', destination: PROVINCES[1], description: '',
+                    startDate: '', endDate: '', category: TRIP_CATEGORIES[0].label,
+                    budget: 1000, maxParticipants: 10, imageUrl: ''
+                });
+                setImagePreview('');
+                setStep(1);
+                closeCreateModal();
+
+                // Navigate to the newly created trip details page
+                // Uses /trip/:id (singular) to match AnimatedRoutes definition
+                setTimeout(() => {
+                    navigate(`/trip/${tripId}`);
+                }, 100);
+            } else {
+                console.error('Invalid create response:', response);
+                alert('สร้างกิจกรรมสำเร็จ แต่ไม่สามารถระบุ ID ได้ กรุณาตรวจสอบที่หน้าแรก');
+            }
 
         } catch (err: any) {
             console.error('Failed to create trip:', err);

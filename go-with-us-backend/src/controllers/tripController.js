@@ -200,6 +200,8 @@ export const updateTrip = async (req, res, next) => {
             imageUrl,
             gallery,
             itinerary,
+            summary,
+            groupAnalysis,
         } = req.body;
 
         // Check if trip exists
@@ -235,6 +237,8 @@ export const updateTrip = async (req, res, next) => {
                 ...(imageUrl !== undefined && { imageUrl }),
                 ...(gallery !== undefined && { gallery }),
                 ...(itinerary !== undefined && { itinerary }),
+                ...(summary !== undefined && { summary }),
+                ...(groupAnalysis !== undefined && { groupAnalysis }),
             },
             include: {
                 creator: {
@@ -370,6 +374,54 @@ export const leaveTrip = async (req, res, next) => {
         });
 
         res.json({ message: 'Successfully left the trip' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Remove participant (kick) - Protected (Creator/Admin only)
+export const removeParticipant = async (req, res, next) => {
+    try {
+        const { id, userId } = req.params;
+
+        // Check trip existence
+        const trip = await prisma.trip.findUnique({
+            where: { id },
+        });
+
+        if (!trip) {
+            return res.status(404).json({ error: 'Trip not found.' });
+        }
+
+        // Check authorization (Creator or Admin)
+        if (trip.creatorId !== req.user.userId && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'You do not have permission to remove participants.' });
+        }
+
+        // Find participant record to remove
+        const participant = await prisma.participant.findFirst({
+            where: {
+                tripId: id,
+                userId: userId,
+            },
+        });
+
+        if (!participant) {
+            return res.status(404).json({ error: 'User is not a participant of this trip.' });
+        }
+
+        // Check if trying to remove creator (should not happen via UI, but safe to block)
+        if (userId === trip.creatorId) {
+            return res.status(400).json({ error: 'Cannot remove the trip creator.' });
+        }
+
+        await prisma.participant.delete({
+            where: {
+                id: participant.id,
+            },
+        });
+
+        res.json({ message: 'Participant removed successfully.' });
     } catch (error) {
         next(error);
     }

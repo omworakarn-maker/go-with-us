@@ -150,6 +150,8 @@ export interface CreateTripData {
     imageUrl?: string;
     gallery?: string[];
     itinerary?: DayPlan[];
+    summary?: string;
+    groupAnalysis?: string;
 }
 
 export interface UpdateTripData extends Partial<CreateTripData> { }
@@ -223,6 +225,13 @@ export const tripsAPI = {
     // Leave trip (requires auth)
     leave: async (id: string) => {
         return authFetch(`${API_BASE_URL}/trips/${id}/leave`, {
+            method: 'DELETE',
+        });
+    },
+
+    // Remove participant (kick) (requires auth)
+    removeParticipant: async (tripId: string, userId: string) => {
+        return authFetch(`${API_BASE_URL}/trips/${tripId}/participants/${userId}`, {
             method: 'DELETE',
         });
     },

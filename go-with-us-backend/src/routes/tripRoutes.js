@@ -7,6 +7,7 @@ import {
     deleteTrip,
     joinTrip,
     leaveTrip,
+    removeParticipant,
 } from '../controllers/tripController.js';
 import { verifyToken, verifyTokenOptional } from '../middleware/auth.js';
 
@@ -22,5 +23,6 @@ router.put('/:id', verifyToken, updateTrip);
 router.delete('/:id', verifyToken, deleteTrip);
 router.post('/:id/join', verifyToken, joinTrip);
 router.delete('/:id/leave', verifyToken, leaveTrip);
+router.delete('/:id/participants/:userId', verifyToken, removeParticipant);
 
 export default router;

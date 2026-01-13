@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trip, AIRecommendation, DayPlan } from '../types';
 import { analyzeTripPlan } from '../services/geminiService';
@@ -45,7 +46,11 @@ export const TripDetails: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // Added showDeleteModal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // For deleting TRIP
+  const [showKickModal, setShowKickModal] = useState(false);   // For kicking USER
+  const [userToKick, setUserToKick] = useState<{ id: string; name: string } | null>(null);
+
+  const [aiPrompt, setAiPrompt] = useState(''); // New state for custom AI prompt
   const [updating, setUpdating] = useState(false);
   // Delete state - moved to top level to avoid hook order errors
   const [deleting, setDeleting] = useState(false);
@@ -55,6 +60,22 @@ export const TripDetails: React.FC = () => {
   const [itinerary, setItinerary] = useState<DayPlan[]>([]);
   const [savingContent, setSavingContent] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Image Carousel State
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Derived state for images
+  const allImages = trip ? [trip.imageUrl, ...(trip.gallery || [])].filter(Boolean) as string[] : [];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -149,10 +170,8 @@ export const TripDetails: React.FC = () => {
 
       // Refresh trip data
       const response = await tripsAPI.getById(trip.id);
-      setTrip(response.trip);
       setShowEditModal(false);
-
-      alert('อัปเดตข้อมูลทริปสำเร็จ!');
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Failed to update trip:', error);
       alert(error.message || 'ไม่สามารถอัปเดตทริปได้');
@@ -194,7 +213,14 @@ export const TripDetails: React.FC = () => {
       setSavingContent(true);
       await tripsAPI.update(trip.id, {
         gallery,
-        itinerary
+        itinerary,
+        // Save AI analysis if available (from new recommendation) or keep existing (implicit in backend if not sent?)
+        // actually only send if we have a NEW recommendation we want to commit, OR just always send the current state if we had editable fields.
+        // For now, if recommendation exists, we save it.
+        ...(recommendation ? {
+          summary: recommendation.summary,
+          groupAnalysis: recommendation.groupAnalysis
+        } : {})
       });
 
       // Refresh trip data
@@ -232,7 +258,7 @@ export const TripDetails: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await analyzeTripPlan(trip);
+      const res = await analyzeTripPlan(trip, aiPrompt);
       setRecommendation(res);
 
       // Auto-populate itinerary editor
@@ -249,8 +275,32 @@ export const TripDetails: React.FC = () => {
     } catch (error) {
       setNotification({ message: 'AI เกิดข้อผิดพลาดในการวิเคราะห์ กรุณาลองใหม่อีกครั้ง', type: 'error' });
       setTimeout(() => setNotification(null), 3000);
+      console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteSummary = async () => {
+    if (!trip) return;
+    if (!confirm('ต้องการลบข้อมูลมุมมองจาก AI หรือไม่?')) return;
+
+    try {
+      await tripsAPI.update(trip.id, {
+        summary: "",
+        groupAnalysis: ""
+      });
+
+      // Refresh local state
+      const response = await tripsAPI.getById(trip.id);
+      setTrip(response.trip);
+      setRecommendation(null); // Clear any fresh recommendation
+
+      setNotification({ message: 'ลบข้อมูลมุมมองจาก AI สำเร็จ', type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('Failed to delete summary:', error);
+      alert('ไม่สามารถลบข้อมูลได้');
     }
   };
 
@@ -271,6 +321,32 @@ export const TripDetails: React.FC = () => {
       console.error('Failed to delete trip:', error);
       alert('ไม่สามารถลบกิจกรรมได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
       setDeleting(false);
+    }
+  };
+
+  const handleKickClick = (userId: string, userName: string) => {
+    setUserToKick({ id: userId, name: userName });
+    setShowKickModal(true);
+  };
+
+  const confirmKickUser = async () => {
+    if (!trip || !userToKick) return;
+
+    // Close modal immediately
+    setShowKickModal(false);
+
+    try {
+      await tripsAPI.removeParticipant(trip.id, userToKick.id);
+
+      // Refresh current trip data
+      const response = await tripsAPI.getById(trip.id);
+      setTrip(response.trip);
+
+      setNotification({ message: `ลบคุณ ${userToKick.name} ออกจากทริปแล้ว`, type: 'success' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('Failed to kick user:', error);
+      alert('ไม่สามารถลบสมาชิกได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
     }
   };
 
@@ -408,19 +484,126 @@ export const TripDetails: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            {/* Trip Image */}
-            {trip.imageUrl && (
-              <div className="w-full h-96 rounded-3xl overflow-hidden shadow-lg animate-in fade-in duration-700">
-                <img
-                  src={trip.imageUrl}
-                  alt={trip.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
+            {/* Trip Image Gallery Slider */}
+            {allImages.length > 0 && (
+              <>
+                <div className="w-full h-96 rounded-3xl overflow-hidden shadow-lg animate-in fade-in duration-700 relative group bg-gray-100 mb-8 cursor-pointer" onClick={() => setShowFullScreenImage(true)}>
+                  <img
+                    src={allImages[currentImageIndex]}
+                    alt={trip.title}
+                    className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x600?text=No+Image';
+                    }}
+                  />
+
+                  {/* Navigation Arrows */}
+                  {allImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow-lg backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-black p-2 rounded-full shadow-lg backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                      </button>
+
+                      {/* Dots Indicator */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                        {allImages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }}
+                            className={`w-2 h-2 rounded-full transition-all shadow-sm ${currentImageIndex === idx ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'
+                              }`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Image Counter Badge */}
+                  {allImages.length > 1 && (
+                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
+                      {currentImageIndex + 1} / {allImages.length}
+                    </div>
+                  )}
+
+                  {/* Expand Hint */}
+                  <div className="absolute top-4 left-4 bg-black/30 backdrop-blur-md text-white/80 text-xs font-medium px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    คลิกเพื่อดูภาพเต็ม
+                  </div>
+                </div>
+
+                {/* Full Screen Image Modal */}
+                {createPortal(
+                  <AnimatePresence>
+                    {showFullScreenImage && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+                        onClick={() => setShowFullScreenImage(false)}
+                      >
+                        {/* Close Button */}
+                        <button
+                          onClick={() => setShowFullScreenImage(false)}
+                          className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors bg-white/10 p-2 rounded-full z-10"
+                        >
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+
+                        {/* Main Image */}
+                        <motion.img
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.9, opacity: 0 }}
+                          className="max-w-full max-h-screen object-contain rounded-lg shadow-2xl"
+                          src={allImages[currentImageIndex]}
+                          alt={trip.title}
+                          onClick={(e) => e.stopPropagation()} // Prevent close on image click
+                        />
+
+                        {/* Navigation Overlays */}
+                        {allImages.length > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                              className="absolute left-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-all bg-white/10 hover:bg-white/20 p-4 rounded-full"
+                            >
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                              className="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-all bg-white/10 hover:bg-white/20 p-4 rounded-full"
+                            >
+                              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                          </>
+                        )}
+
+                        {/* Footer Info */}
+                        <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
+                          <span className="bg-black/50 text-white px-4 py-2 rounded-full text-sm font-medium">
+                            {currentImageIndex + 1} / {allImages.length}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>,
+                  document.body
+                )}
+              </>
             )}
+
+            {/* Trip Info - Restored */}
             <h1 className="text-4xl font-bold text-gray-900 mb-2 animate-in slide-in-from-bottom-4 duration-700">{trip.title}</h1>
             <p className="text-lg text-gray-500 mb-8 animate-in slide-in-from-bottom-4 duration-700 delay-100">{trip.destination}</p>
             <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mb-8 animate-in slide-in-from-bottom-4 duration-700 delay-200">
@@ -428,7 +611,7 @@ export const TripDetails: React.FC = () => {
               <p className="text-gray-700 leading-relaxed">{trip.description}</p>
             </div>
 
-            {/* Display Gallery - For Everyone */}
+            {/* Additional Images Gallery - Restored & Interactive */}
             {trip.gallery && trip.gallery.length > 0 && (
               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm mb-8 animate-in slide-in-from-bottom-4 duration-700 delay-250">
                 <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4">
@@ -440,8 +623,15 @@ export const TripDetails: React.FC = () => {
                       key={index}
                       src={img}
                       alt={`Gallery ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => window.open(img, '_blank')}
+                      className="w-full h-48 object-cover rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:opacity-90"
+                      onClick={() => {
+                        // Calculate index in allImages array
+                        // allImages = [trip.imageUrl, ...trip.gallery]
+                        // So gallery index i corresponds to i + 1 (if imageUrl exists)
+                        const offset = trip.imageUrl ? 1 : 0;
+                        setCurrentImageIndex(index + offset);
+                        setShowFullScreenImage(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -537,7 +727,8 @@ export const TripDetails: React.FC = () => {
               </div>
             )}
 
-            {recommendation && (
+            {/* AI Perspective / Summary - Always show if available (Fresh or Saved) */}
+            {(recommendation?.summary || trip?.summary) && (
               <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-700">
                 <section>
                   <div className="flex justify-between items-center mb-4">
@@ -551,34 +742,67 @@ export const TripDetails: React.FC = () => {
                       {loading ? 'กำลังวิเคราะห์...' : 'วิเคราะห์ใหม่'}
                     </button>
                   </div>
-                  <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-indigo-900 leading-relaxed italic">
-                    "{recommendation.summary}"
-                  </div>
-                </section>
-                <section>
-                  <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-6">แผนการเดินทาง</h2>
-                  <div className="space-y-8">
-                    {recommendation.itinerary?.map((day) => (
-                      <div key={day.day} className="relative pl-8 border-l border-gray-100">
-                        <div className="absolute left-[-9px] top-0 w-4 h-4 bg-black rounded-full border-4 border-white"></div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-6">วันที่ {day.day}</h3>
-                        <div className="space-y-6">
-                          {day.activities?.map((act, i) => (
-                            <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                              <span className="text-[10px] font-bold text-gray-500 uppercase">{act.time}</span>
-                              <h4 className="text-md font-medium text-gray-900 mt-1">{act.name}</h4>
-                              <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                {act.location}
-                              </p>
-                              <p className="text-sm text-gray-600 leading-relaxed">{act.description}</p>
-                            </div>
-                          ))}
-                        </div>
+
+                  {/* Summary Box */}
+                  <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-3xl text-indigo-900 leading-relaxed italic relative group">
+                    {/* Delete Button (Only for Creator/Admin) */}
+                    {(isCreator || isAdmin) && (
+                      <button
+                        onClick={handleDeleteSummary}
+                        className="absolute top-4 right-4 text-indigo-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                        title="ลบข้อมูลนี้"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    )}
+                    <div className="absolute top-6 left-6 opacity-20">
+                      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 13.1216 16 12.017 16H9.01699L9.01699 21H14.017ZM16.017 21L16.017 18C16.017 16.8954 16.9124 16 18.017 16H21.017L21.017 21H16.017ZM23 14H3V3H23V14ZM11.017 14V11H13.017V14H11.017ZM7.01699 14V11H9.01699V14H7.01699Z" /></svg>
+                    </div>
+                    <div className="pl-8 relative z-10">
+                      <span className="font-bold mr-2">Summary:</span>
+                      {recommendation?.summary || trip?.summary}
+                    </div>
+                    {(recommendation?.groupAnalysis || trip?.groupAnalysis) && (
+                      <div className="pl-8 mt-4 pt-4 border-t border-indigo-100/50 relative z-10">
+                        <span className="font-bold mr-2">Analysis:</span>
+                        {recommendation?.groupAnalysis || trip?.groupAnalysis}
                       </div>
-                    ))}
+                    )}
                   </div>
                 </section>
+
+                {/* Show Itinerary from Recommendation ONLY if fresh (user hasn't saved yet or is previewing) */}
+                {recommendation && (
+                  <section>
+                    <div className="flex items-center gap-2 mb-6">
+                      <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold">แผนการเดินทาง (ร่างจาก AI)</h2>
+                      <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md font-bold">PREVIEW</span>
+                    </div>
+                    <div className="space-y-8 opacity-75 grayscale-[30%] hover:grayscale-0 transition-all">
+                      {recommendation.itinerary?.map((day) => (
+                        <div key={day.day} className="relative pl-8 border-l border-gray-100">
+                          <div className="absolute left-[-9px] top-0 w-4 h-4 bg-indigo-200 rounded-full border-4 border-white"></div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-6">วันที่ {day.day}</h3>
+                          <div className="space-y-6">
+                            {day.activities?.map((act, i) => (
+                              <div key={i} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase">{act.time}</span>
+                                <h4 className="text-md font-medium text-gray-900 mt-1">{act.name}</h4>
+                                <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">
+                                  {act.location}
+                                </p>
+                                <p className="text-sm text-gray-600 leading-relaxed">{act.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-8 text-center">
+                      <p className="text-sm text-gray-500 mb-4">ชอบแผนนี้ไหม? อย่าลืมกด <b>"บันทึกการเปลี่ยนแปลง"</b> ด้านล่างเพื่อนำไปใช้จริง</p>
+                    </div>
+                  </section>
+                )}
               </div>
             )}
 
@@ -671,7 +895,7 @@ export const TripDetails: React.FC = () => {
               <h2 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4">สมาชิกในกลุ่ม</h2>
               <div className="space-y-4">
                 {trip.participants.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between">
+                  <div key={p.id} className="flex items-center justify-between group">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
                         {p.name.charAt(0).toUpperCase()}
@@ -681,15 +905,28 @@ export const TripDetails: React.FC = () => {
                         <p className="text-[10px] text-gray-400">{p.interests.join(', ')}</p>
                       </div>
                     </div>
-                    {user && p.userId !== user.id && (
-                      <button
-                        onClick={() => navigate(`/chat?userId=${p.userId}&userName=${encodeURIComponent(p.name)}`)}
-                        className="text-gray-400 hover:text-indigo-600 transition-colors bg-gray-50 p-2 rounded-full hover:bg-indigo-50"
-                        title="ส่งข้อความส่วนตัว"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      {user && p.userId !== user.id && (
+                        <button
+                          onClick={() => navigate(`/chat?userId=${p.userId}&userName=${encodeURIComponent(p.name)}`)}
+                          className="text-gray-400 hover:text-indigo-600 transition-colors bg-gray-50 p-2 rounded-full hover:bg-indigo-50"
+                          title="ส่งข้อความส่วนตัว"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        </button>
+                      )}
+
+                      {/* Kick User Button (Creator/Admin Only) */}
+                      {(isCreator || isAdmin) && p.userId !== trip.creatorId && (
+                        <button
+                          onClick={() => handleKickClick(p.userId, p.name)}
+                          className="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 p-2 rounded-full hover:bg-red-50"
+                          title="ลบออกจากทริป"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" /></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -815,6 +1052,49 @@ export const TripDetails: React.FC = () => {
           )}
         </AnimatePresence>
 
+        {/* Kick User Confirmation Modal */}
+        <AnimatePresence>
+          {showKickModal && userToKick && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+              >
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">ยืนยันการลบสมาชิก</h3>
+                <p className="text-gray-500 mb-8 text-sm">
+                  คุณต้องการลบคุณ <span className="font-bold text-gray-800">"{userToKick.name}"</span> ออกจากทริปนี้ใช่หรือไม่?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowKickModal(false)}
+                    className="flex-1 py-3 px-4 rounded-xl border border-gray-200 font-bold text-gray-600 hover:bg-gray-50 transition-all"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={confirmKickUser}
+                    className="flex-1 py-3 px-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-200"
+                  >
+                    ลบสมาชิก
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Delete Confirmation Modal */}
         <AnimatePresence>
           {showDeleteModal && (
@@ -893,9 +1173,21 @@ export const TripDetails: React.FC = () => {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold mb-2">สร้างแผนใหม่?</h3>
-                <p className="text-gray-500 mb-8">
-                  แผนการเดินทางเดิมจะถูกเขียนทับ คุณแน่ใจหรือไม่ที่จะให้ AI วิเคราะห์ใหม่
+                <p className="text-gray-500 mb-6">
+                  แผนเดิมจะถูกเขียนทับ คุณต้องการให้เพิ่มเงื่อนไขอะไรเป็นพิเศษไหม?
                 </p>
+
+                {/* Custom Prompt Input */}
+                <div className="mb-8 text-left">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">คำขอพิเศษ (ไม่บังคับ)</label>
+                  <textarea
+                    className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-2xl p-4 text-sm font-medium outline-none transition-all resize-none placeholder:text-gray-300"
+                    placeholder="เช่น ขอเน้นร้านกาแฟ, ไม่เอาวัด, ขอแบบลุยๆ..."
+                    rows={3}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                  />
+                </div>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowAIConfirmModal(false)}
@@ -915,96 +1207,182 @@ export const TripDetails: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Edit Trip Modal */}
-        {showEditModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/95 animate-in fade-in duration-300">
-            <div className="w-full max-w-2xl p-12 overflow-y-auto max-h-screen no-scrollbar">
-              <div className="flex justify-between items-center mb-16">
-                <h2 className="text-5xl font-black tracking-tight text-black">แก้ไขทริป.</h2>
-                <button onClick={() => setShowEditModal(false)} className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:text-black hover:border-black transition-all">✕</button>
-              </div>
-              <form onSubmit={handleUpdateTrip} className="space-y-10">
-                <div className="space-y-2 border-b border-gray-200 pb-2">
-                  <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">ชื่อทริปหรือกิจกรรม</label>
-                  <input required className="w-full bg-transparent border-none p-0 text-2xl font-bold focus:ring-0 outline-none placeholder:text-gray-100" placeholder="ระบุชื่อกิจกรรมที่นี่..." value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} />
+        {/* Success Modal - Beautiful Monochrome Style */}
+        <AnimatePresence>
+          {showSuccessModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                transition={{ duration: 0.4, type: "spring", bounce: 0.3 }}
+                className="bg-white p-10 rounded-3xl shadow-2xl max-w-sm w-full text-center relative overflow-hidden"
+              >
+
+
+                <div className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <div className="grid grid-cols-2 gap-10">
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">สถานที่</label>
-                    <input required className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none" value={editForm.destination} onChange={e => setEditForm({ ...editForm, destination: e.target.value })} />
+
+                <h3 className="text-3xl font-black tracking-tight text-black mb-3">สำเร็จ!</h3>
+                <p className="text-gray-500 font-medium mb-10">
+                  ข้อมูลทริปของคุณถูกอัปเดตเรียบร้อยแล้ว
+                </p>
+
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full py-4 bg-black text-white text-lg font-bold rounded-2xl hover:bg-gray-800 transition-all shadow-lg active:scale-95"
+                >
+                  ตกลง
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Edit Trip Modal - Refined UI */}
+        <AnimatePresence>
+          {showEditModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/95 backdrop-blur-md"
+            >
+              <motion.div
+                initial={{ y: 100, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 100, opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="w-full max-w-xl bg-white p-6 md:p-10 rounded-[2rem] shadow-2xl border border-gray-100 overflow-y-auto max-h-[85vh] no-scrollbar relative"
+              >
+
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="absolute top-8 right-8 w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-black hover:text-white transition-all z-10"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+
+                <h2 className="text-3xl font-black tracking-tight text-black mb-1">แก้ไขทริป.</h2>
+                <p className="text-gray-400 text-xs font-medium mb-8">ปรับปรุงข้อมูลกิจกรรมของคุณให้สมบูรณ์</p>
+
+                <form onSubmit={handleUpdateTrip} className="space-y-6">
+                  <div className="group">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">ชื่อทริปหรือกิจกรรม</label>
+                    <input
+                      required
+                      className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-base font-bold outline-none transition-all placeholder:text-gray-300"
+                      placeholder="เช่น เที่ยวคาเฟ่ย่านอารีย์..."
+                      value={editForm.title}
+                      onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+                    />
                   </div>
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">หมวดหมู่</label>
-                    <select required className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none appearance-none" value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })}>
-                      {TRIP_CATEGORIES.map(c => (
-                        <option key={c.id} value={c.label}>{c.emoji} {c.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-10">
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">วันที่เริ่ม</label>
-                    <input required type="date" className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none" value={editForm.startDate} onChange={e => setEditForm({ ...editForm, startDate: e.target.value })} />
-                  </div>
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">วันที่สิ้นสุด (ไม่บังคับ)</label>
-                    <input type="date" className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none" value={editForm.endDate} onChange={e => setEditForm({ ...editForm, endDate: e.target.value })} min={editForm.startDate} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-10">
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">งบประมาณ (บาท)</label>
-                    <div className="relative">
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">สถานที่</label>
                       <input
                         required
-                        type="number"
-                        min="0"
-                        step="100"
-                        className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none"
-                        placeholder="ใส่ 0 หากเข้าฟรี"
-                        value={editForm.budget}
-                        onChange={e => {
-                          const val = parseInt(e.target.value);
-                          setEditForm({ ...editForm, budget: isNaN(val) ? 0 : Math.max(0, val) });
-                        }}
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none transition-all"
+                        value={editForm.destination}
+                        onChange={e => setEditForm({ ...editForm, destination: e.target.value })}
                       />
-                      {editForm.budget === 0 && (
-                        <div className="absolute inset-y-0 right-0 flex items-center pointer-events-none">
-                          <span className="text-black font-black text-xs bg-gray-100 px-2 py-1 rounded">FREE</span>
+                    </div>
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">หมวดหมู่</label>
+                      <div className="relative">
+                        <select
+                          required
+                          className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none appearance-none transition-all cursor-pointer"
+                          value={editForm.category}
+                          onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                        >
+                          {TRIP_CATEGORIES.map(c => (
+                            <option key={c.id} value={c.label}>
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2 border-b border-gray-200 pb-2">
-                    <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">จำนวนคนสูงสุด</label>
-                    <input required type="number" min="1" max="15" className="w-full bg-transparent border-none p-0 text-lg font-bold focus:ring-0 outline-none" value={editForm.maxParticipants} onChange={e => setEditForm({ ...editForm, maxParticipants: Math.min(15, Math.max(1, parseInt(e.target.value) || 1)) })} />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">วันที่เริ่ม</label>
+                      <input required type="date" className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none transition-all" value={editForm.startDate} onChange={e => setEditForm({ ...editForm, startDate: e.target.value })} />
+                    </div>
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">วันที่สิ้นสุด (ไม่บังคับ)</label>
+                      <input type="date" className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none transition-all" value={editForm.endDate} onChange={e => setEditForm({ ...editForm, endDate: e.target.value })} min={editForm.startDate} />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2 border-b border-gray-200 pb-2">
-                  <label className="block text-[10px] uppercase font-bold text-gray-400 tracking-widest">รายละเอียดสั้นๆ</label>
-                  <textarea rows={2} className="w-full bg-transparent border-none p-0 text-lg font-medium focus:ring-0 outline-none resize-none placeholder:text-gray-100" placeholder="อธิบายกิจกรรมให้เพื่อนๆ อยากเข้าร่วม..." value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
-                </div>
-                <div className="pt-8">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="w-full py-5 bg-black text-white text-sm font-bold rounded-full hover:bg-gray-800 transition-all shadow-xl shadow-black/10 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {updating ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        กำลังอัปเดต...
-                      </span>
-                    ) : (
-                      'บันทึกการเปลี่ยนแปลง'
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">งบประมาณ (บาท)</label>
+                      <div className="relative">
+                        <input
+                          required
+                          type="number"
+                          min="0"
+                          step="100"
+                          className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none transition-all"
+                          placeholder="0"
+                          value={editForm.budget}
+                          onChange={e => {
+                            const val = parseInt(e.target.value);
+                            setEditForm({ ...editForm, budget: isNaN(val) ? 0 : Math.max(0, val) });
+                          }}
+                        />
+                        {editForm.budget === 0 && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <span className="text-black font-black text-[10px] bg-gray-200 px-1.5 py-0.5 rounded">FREE</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="group">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">จำนวนคนสูงสุด</label>
+                      <input required type="number" min="1" max="15" className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-bold outline-none transition-all" value={editForm.maxParticipants} onChange={e => setEditForm({ ...editForm, maxParticipants: Math.min(15, Math.max(1, parseInt(e.target.value) || 1)) })} />
+                    </div>
+                  </div>
+
+                  <div className="group">
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 group-focus-within:text-black transition-colors">รายละเอียด</label>
+                    <textarea rows={4} className="w-full bg-gray-50 border-2 border-transparent focus:border-black rounded-xl p-3 text-sm font-medium outline-none transition-all resize-none placeholder:text-gray-300" placeholder="อธิบายลายละเอียดกิจกรรม..." value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={updating}
+                      className="w-full py-4 bg-black text-white text-base font-bold rounded-xl hover:bg-gray-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {updating ? (
+                        <span className="flex items-center justify-center gap-3">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          กำลังอัปเดต...
+                        </span>
+                      ) : (
+                        'บันทึกการเปลี่ยนแปลง'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

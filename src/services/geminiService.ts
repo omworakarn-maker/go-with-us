@@ -7,7 +7,7 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 // Initialize AI with API key if available
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
-export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => {
+export const analyzeTripPlan = async (trip: Trip, userPrompt?: string): Promise<AIRecommendation> => {
   // Check if AI is initialized
   if (!genAI) {
     throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in .env.local');
@@ -24,6 +24,7 @@ export const analyzeTripPlan = async (trip: Trip): Promise<AIRecommendation> => 
     วันที่: ${trip.startDate} - ${trip.endDate}
     งบประมาณ: ${trip.budget} บาท
     สมาชิก: ${JSON.stringify(trip.participants)}
+    ${userPrompt ? `\n    คำขอพิเศษเพิ่มเติมจากผู้ใช้ (User Custom Prompt):\n    "${userPrompt}"\n    (กรุณานำคำขอนี้ไปปรับใช้ในการวางแผนอย่างเคร่งครัด)\n` : ''}
     
     โจทย์ของคุณ:
     1. วิเคราะห์ความสนใจของกลุ่ม (groupAnalysis)

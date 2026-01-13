@@ -67,7 +67,7 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
       onClick={handleClick}
       className="group bg-white border border-gray-200 rounded-3xl p-4 md:p-6 transition-all duration-500 cursor-pointer flex flex-col md:flex-row gap-4 md:gap-8 items-stretch hover:border-black hover:shadow-xl shadow-sm relative overflow-hidden h-full"
     >
-      <div className="w-full md:w-48 h-40 md:h-auto min-h-[160px] rounded-2xl overflow-hidden bg-gray-50 shrink-0 relative">
+      <div className="w-full md:w-48 h-48 rounded-2xl overflow-hidden bg-gray-50 shrink-0 relative">
         <img
           src={trip.imageUrl || defaultTripImage}
           className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isEnded ? 'grayscale opacity-70' : ''}`}
@@ -105,13 +105,15 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onClick }) => {
           {trip.title}
         </h3>
 
-        <p className="text-gray-400 font-bold text-sm uppercase tracking-widest mb-1">
+        <p className="text-gray-400 font-bold text-sm uppercase tracking-widest mb-4">
           {trip.destination}
         </p>
 
         <p className="text-gray-500 leading-relaxed font-medium line-clamp-2 max-w-xl text-sm mb-4">
           {trip.description}
         </p>
+
+
 
         <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-50 w-full">
           <div className="flex items-center gap-2 md:gap-3">

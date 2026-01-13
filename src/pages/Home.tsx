@@ -157,7 +157,7 @@ const Home: React.FC = () => {
             setShowCategoryDropdown={setShowCategoryDropdown}
             formatDateLabel={formatDateLabel}
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {loading ? (
               // Display New Loader
               <div className="col-span-full">
