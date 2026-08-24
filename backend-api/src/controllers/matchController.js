@@ -55,35 +55,11 @@ const MATCH_TIMES = ['morning', 'noon', 'evening', 'night'];
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-// Encode a continuous value as a unit vector on a quarter circle. Unlike a
-// single scalar, this lets Cosine Similarity measure how far two values differ.
-const encodeContinuous = (value, min, max) => {
-    const position = clamp((Number(value) - min) / (max - min), 0, 1);
-    const angle = position * (Math.PI / 2);
-    return [Math.cos(angle), Math.sin(angle)];
-};
-
-// Budget uses a logarithmic position because a difference of 500 baht matters
-// more around 500–1,000 than around 10,000–15,000 baht.
-const encodeBudget = (budgetTHB) => {
-    const minBudget = 100;
-    const maxBudget = 50000;
-    const safeBudget = clamp(Number(budgetTHB) || minBudget, minBudget, maxBudget);
-    const position = Math.log(safeBudget / minBudget) / Math.log(maxBudget / minBudget);
-    const angle = position * (Math.PI / 2);
-    return [Math.cos(angle), Math.sin(angle)];
-};
-
 const encodeMultiHotUnit = (selected, universe) => {
     const selectedSet = new Set(Array.isArray(selected) ? selected : []);
     const raw = universe.map(value => selectedSet.has(value) ? 1 : 0);
     const norm = Math.sqrt(raw.reduce((sum, value) => sum + (value * value), 0));
     return norm > 0 ? raw.map(value => value / norm) : raw;
-};
-
-const appendWeightedBlock = (target, block, weight) => {
-    const scale = Math.sqrt(weight);
-    target.push(...block.map(value => value * scale));
 };
 
 const blockCosinePercentage = (userBlock, tripBlock) => (
@@ -264,7 +240,7 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
         // หากคนเต็ม ให้คะแนน groupMatch เป็น 0
         breakdown.groupMatch = 0;
         // ส่งคืนค่าคะแนนรวมและย่อยเป็น 0 ทั้งหมด เพราะไม่สามารถร่วมทริปได้
-        return { total: 0, breakdown, tripMatch: 0, cosineSimilarity: 0 };
+        return { total: 0, breakdown, tripMatch: 0 };
     }
 
     // ดึงวันที่สิ้นสุดของทริป หรือถ้าไม่มีใช้วันที่เริ่มต้น
@@ -280,14 +256,9 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
         // ถ้าระยะเวลาสิ้นสุดทริปผ่านมาแล้ว (น้อยกว่าวันปัจจุบัน)
         if (tripDay < today) {
             // ส่งคืนค่า 0 ทั้งหมด เพราะทริปจบลงไปแล้ว
-            return { total: 0, breakdown, tripMatch: 0, cosineSimilarity: 0 };
+            return { total: 0, breakdown, tripMatch: 0 };
         }
     }
-
-    // สร้างอาร์เรย์เวกเตอร์ของคุณลักษณะผู้ใช้
-    const userVector = [];
-    // สร้างอาร์เรย์เวกเตอร์ของคุณลักษณะทริป
-    const tripVector = [];
 
     // 1. การคำนวณเวกเตอร์ด้านงบประมาณ (น้ำหนัก 30%)
     // ดึงค่างบประมาณดิบจากผู้ใช้
@@ -305,28 +276,16 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
         
     // ตรวจสอบว่ามีข้อมูลงบประมาณทั้งสองฝั่ง
     if (userBudgetTHB !== null && Number.isFinite(tripBudgetTHB)) {
-        // แปลงข้อมูลงบผู้ใช้ให้เป็นเวกเตอร์พิกัดบนวงกลมด้วย Logarithmic mapping
-        const userBudgetBlock = encodeBudget(userBudgetTHB);
-        // แปลงข้อมูลงบทริปเป็นเวกเตอร์ (ถ้างบทริปเป็น 0 แปลว่าไม่ระบุงบ จะใช้เวกเตอร์เดียวกับผู้ใช้ให้คะแนนเต็ม)
-        const tripBudgetBlock = tripBudgetTHB === 0
-            ? userBudgetBlock
-            : encodeBudget(tripBudgetTHB);
-            
-        // เพิ่มเวกเตอร์งบของผู้ใช้เข้าเวกเตอร์หลัก โดยคูณสเกลน้ำหนัก (0.30)
-        appendWeightedBlock(userVector, userBudgetBlock, MATCH_WEIGHTS.budget);
-        // เพิ่มเวกเตอร์งบของทริปเข้าเวกเตอร์หลัก โดยคูณสเกลน้ำหนัก (0.30)
-        appendWeightedBlock(tripVector, tripBudgetBlock, MATCH_WEIGHTS.budget);
-        // คะแนนงบที่แสดงบน UI ต้องสื่อถึงความเข้ากันได้จริง
-        // หากเกินงบมากกว่า 2 เท่า ถือว่าไม่ผ่านเงื่อนไขด้านงบและให้ 0%
-        // หากเกินไม่ถึง 2 เท่า ให้ลดลงตามสัดส่วนกำลังจ่าย
-        // (เวกเตอร์งบสำหรับคะแนนรวม Cosine ยังคงใช้สูตรเดิม)
-        breakdown.budget = tripBudgetTHB === 0
-            ? 100
-            : tripBudgetTHB <= userBudgetTHB
-                ? 100
-                : tripBudgetTHB > userBudgetTHB * 2
-                    ? 0
-                    : Math.round(clamp(userBudgetTHB / tripBudgetTHB, 0, 1) * 100);
+        // ต่ำกว่า 50% ของงบทริปถือว่าไม่เหมาะสมและได้ 0%
+        // ตั้งแต่ 50% ขึ้นไปคิดตามสัดส่วน และถ้างบเพียงพอได้เต็ม 100%
+        if (tripBudgetTHB === 0 || userBudgetTHB >= tripBudgetTHB) {
+            breakdown.budget = 100;
+        } else if (userBudgetTHB < tripBudgetTHB * 0.5) {
+            breakdown.budget = 0;
+        } else {
+            breakdown.budget = Math.round((userBudgetTHB / tripBudgetTHB) * 100);
+        }
+
     }
 
     // 2. การคำนวณเวกเตอร์ด้านสไตล์การทำกิจกรรม (น้ำหนัก 20%)
@@ -334,19 +293,14 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
     const tripPace = trip.activityStyle != null ? trip.activityStyle : (styleC ? styleC.activityStyle : null);
     // ตรวจสอบว่ามีข้อมูลกิจกรรมทั้งสองฝั่ง
     if (styleU && styleU.activityStyle !== null && tripPace !== null) {
-        // แปลงระดับกิจกรรมของผู้ใช้ (1-10) ให้เป็นเวกเตอร์
-        const userActivityBlock = encodeContinuous(styleU.activityStyle, 1, 10);
-        // แปลงระดับกิจกรรมของทริป (1-10) ให้เป็นเวกเตอร์
-        const tripActivityBlock = encodeContinuous(tripPace, 1, 10);
-        
-        // เพิ่มเวกเตอร์เข้าเวกเตอร์หลักพร้อมคูณน้ำหนัก (0.20)
-        appendWeightedBlock(userVector, userActivityBlock, MATCH_WEIGHTS.activityStyle);
-        appendWeightedBlock(tripVector, tripActivityBlock, MATCH_WEIGHTS.activityStyle);
-        // คะแนนกิจกรรมที่แสดงบน UI ลดลงตามระยะห่างของระดับ 1-10
-        const activityDifference = Math.abs(Number(styleU.activityStyle) - Number(tripPace));
+        // คะแนนลดลงตามระยะห่างบนสเกล 1-10 (ระยะห่างสูงสุด = 9)
+        const activityDifference = Math.abs(
+            clamp(Number(styleU.activityStyle), 1, 10) - clamp(Number(tripPace), 1, 10)
+        );
         breakdown.activityStyle = Math.round(
             clamp(1 - (activityDifference / 9), 0, 1) * 100
         );
+
     }
 
     // 3. การคำนวณเวกเตอร์ด้านช่วงเวลาของวัน (น้ำหนัก 15%)
@@ -361,17 +315,7 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
         
         // ถ้าทั้งคู่มีข้อมูลที่ตรงรูปแบบอย่างน้อย 1 ตัว
         if (userTimeBlock.some(Boolean) && tripTimeBlock.some(Boolean)) {
-            // เพิ่มเวกเตอร์เข้าเวกเตอร์หลักพร้อมคูณน้ำหนัก (0.15)
-            appendWeightedBlock(userVector, userTimeBlock, MATCH_WEIGHTS.timeOfDay);
-            appendWeightedBlock(tripVector, tripTimeBlock, MATCH_WEIGHTS.timeOfDay);
-            // คะแนนเวลา = ช่วงที่ตรงกัน ÷ ช่วงเวลาที่ทั้งสองฝ่ายเลือกรวมกัน (Jaccard)
-            const validUserTimes = new Set(styleU.timeOfDay.filter(time => MATCH_TIMES.includes(time)));
-            const validTripTimes = new Set(tripTime.filter(time => MATCH_TIMES.includes(time)));
-            const sharedTimes = [...validUserTimes].filter(time => validTripTimes.has(time)).length;
-            const allTimes = new Set([...validUserTimes, ...validTripTimes]).size;
-            breakdown.timeOfDay = allTimes > 0
-                ? Math.round((sharedTimes / allTimes) * 100)
-                : null;
+            breakdown.timeOfDay = blockCosinePercentage(userTimeBlock, tripTimeBlock);
         }
     }
 
@@ -387,19 +331,11 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
         
         // ถ้าข้อมูลมีอยู่จริง
         if (userCategoryBlock.some(Boolean) && tripCategoryBlock.some(Boolean)) {
-            // เพิ่มเวกเตอร์เข้าเวกเตอร์หลักพร้อมคูณน้ำหนัก (0.35)
-            appendWeightedBlock(userVector, userCategoryBlock, MATCH_WEIGHTS.category);
-            appendWeightedBlock(tripVector, tripCategoryBlock, MATCH_WEIGHTS.category);
-            // ทริปมีหมวดหมู่เดียว: ถ้าอยู่ในความสนใจของผู้ใช้ให้ตรง 100%
-            breakdown.category = userInterests.includes(trip.category) ? 100 : 0;
+            breakdown.category = blockCosinePercentage(userCategoryBlock, tripCategoryBlock);
         }
     }
 
-    // เก็บค่า Cosine ดิบไว้สำหรับการวิเคราะห์ทางเทคนิค
-    const rawCosineSimilarity = clamp(cosineSimilarity(userVector, tripVector), 0, 1);
-
-    // คะแนนที่ผู้ใช้เห็นเป็นค่าเฉลี่ยถ่วงน้ำหนักของเปอร์เซ็นต์ย่อยทุกด้าน
-    // หากด้านใดไม่มีข้อมูล จะเฉลี่ยใหม่จากเฉพาะน้ำหนักของด้านที่มีข้อมูล
+    // รวมคะแนนย่อยด้วยค่าเฉลี่ยถ่วงน้ำหนัก
     const weightedBreakdown = [
         [breakdown.category, MATCH_WEIGHTS.category],
         [breakdown.budget, MATCH_WEIGHTS.budget],
@@ -423,12 +359,10 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
     // ปัดเศษเปอร์เซ็นต์ให้เป็นจำนวนเต็ม
     const tripTotal = Math.round(percentage);
 
-    // ส่งคืนค่าคะแนนทั้งหมด โครงสร้าง Breakdown และผล Cosine ดิบ (ทศนิยม 4 ตำแหน่ง)
     return {
         total: tripTotal,
         breakdown,
-        tripMatch: tripTotal,
-        cosineSimilarity: Number(rawCosineSimilarity.toFixed(4))
+        tripMatch: tripTotal
     };
 };
 
@@ -544,10 +478,11 @@ export const matchTrips = async (req, res) => {
 
         // 3. Calculate compatibility using exact 4-step logic
         const matches = trips.map(trip => {
-            const score = calculateTripCompatibility(currentUser, trip);
+            const result = calculateTripCompatibilityDetailed(currentUser, trip);
             return {
                 ...trip,
-                matchScore: score
+                matchScore: result.total,
+                matchBreakdown: result.breakdown
             };
         })
             .sort((a, b) => b.matchScore - a.matchScore)

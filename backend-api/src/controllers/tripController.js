@@ -1,6 +1,6 @@
 import prisma from '../utils/prismaClient.js';
 import { generateEmbedding } from '../utils/gemini.js';
-import { calculateTripCompatibility, calculateTripCompatibilityDetailed } from './matchController.js';
+import { calculateTripCompatibilityDetailed } from './matchController.js';
 import { calculateActivityStyleFromItinerary } from '../utils/tripActivityStyle.js';
 
 // Get all trips with filters
@@ -111,12 +111,18 @@ export const getAllTrips = async (req, res, next) => {
                 if (currentUser) {
                     responseTrips = trips.map(trip => {
                         const { total, breakdown } = calculateTripCompatibilityDetailed(currentUser, trip);
-                        return { ...trip, matchScore: total, matchBreakdown: breakdown };
+                        return {
+                            ...trip,
+                            matchScore: total,
+                            matchBreakdown: breakdown
+                        };
                     });
                     
                     // Sort by matchScore descending for recommendations
                     if (type === 'recommended') {
-                        responseTrips.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+                        responseTrips.sort((a, b) => {
+                            return (b.matchScore || 0) - (a.matchScore || 0);
+                        });
                     }
                     
                     console.log(`Calculated matchScore for ${responseTrips.length} trips.`);
@@ -219,7 +225,11 @@ export const getTripById = async (req, res, next) => {
                 });
                 if (currentUser) {
                     const { total, breakdown } = calculateTripCompatibilityDetailed(currentUser, trip);
-                    responseTrip = { ...trip, matchScore: total, matchBreakdown: breakdown };
+                    responseTrip = {
+                        ...trip,
+                        matchScore: total,
+                        matchBreakdown: breakdown
+                    };
                 }
             } catch (err) {
                 // Non-critical — still return trip without score
