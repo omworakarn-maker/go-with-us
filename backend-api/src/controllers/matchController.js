@@ -293,12 +293,12 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
     const tripPace = trip.activityStyle != null ? trip.activityStyle : (styleC ? styleC.activityStyle : null);
     // ตรวจสอบว่ามีข้อมูลกิจกรรมทั้งสองฝั่ง
     if (styleU && styleU.activityStyle !== null && tripPace !== null) {
-        // คะแนนลดลงตามระยะห่างบนสเกล 1-10 (ระยะห่างสูงสุด = 9)
+        // ค่าที่ระบบใช้จริงคือ 2, 5 และ 8 จึงมีระยะห่างสูงสุด 8 - 2 = 6
         const activityDifference = Math.abs(
             clamp(Number(styleU.activityStyle), 1, 10) - clamp(Number(tripPace), 1, 10)
         );
         breakdown.activityStyle = Math.round(
-            clamp(1 - (activityDifference / 9), 0, 1) * 100
+            clamp(1 - (activityDifference / 6), 0, 1) * 100
         );
 
     }
@@ -322,12 +322,17 @@ export const calculateTripCompatibilityDetailed = (user, trip) => {
     // 4. การคำนวณเวกเตอร์ด้านความสนใจและหมวดหมู่ทริป (น้ำหนัก 35%)
     // ตรวจสอบและดึงอาร์เรย์ความสนใจของผู้ใช้
     const userInterests = Array.isArray(user.interests) ? user.interests : [];
+    // รวมหมวดหลักกับความชอบเพิ่มเติมของทริป (ไม่เกิน 3 หมวดและไม่ซ้ำกัน)
+    const tripInterests = [...new Set([
+        ...(trip.category ? [trip.category] : []),
+        ...(Array.isArray(trip.interestTags) ? trip.interestTags : [])
+    ])].filter(category => MATCH_CATEGORIES.includes(category)).slice(0, 3);
     // ตรวจสอบว่าทริปมีหมวดหมู่และผู้ใช้มีความสนใจ
-    if (trip.category && userInterests.length > 0) {
+    if (tripInterests.length > 0 && userInterests.length > 0) {
         // แปลงความสนใจผู้ใช้เป็น Multi-hot vector
         const userCategoryBlock = encodeMultiHotUnit(userInterests, MATCH_CATEGORIES);
-        // แปลงหมวดหมู่ทริป (ตัวเดียว) เป็น Multi-hot vector
-        const tripCategoryBlock = encodeMultiHotUnit([trip.category], MATCH_CATEGORIES);
+        // แปลงหมวดหลักและหมวดเสริมของทริปเป็น Multi-hot vector เดียวกัน
+        const tripCategoryBlock = encodeMultiHotUnit(tripInterests, MATCH_CATEGORIES);
         
         // ถ้าข้อมูลมีอยู่จริง
         if (userCategoryBlock.some(Boolean) && tripCategoryBlock.some(Boolean)) {

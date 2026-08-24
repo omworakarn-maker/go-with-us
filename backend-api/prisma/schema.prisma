@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
 }
 
@@ -11,25 +11,24 @@ datasource db {
 
 // User model
 model User {
-  id        String   @id @default(uuid())
-  username  String?  @unique
+  id                String    @id @default(uuid())
+  username          String?   @unique
   usernameUpdatedAt DateTime? // Track when username was last changed
-  name      String
+  name              String
 
-  email     String   @unique
-  password  String   // Will be hashed
-  role      String   @default("user") // "user" or "admin"
-  isBanned  Boolean  @default(false) // Whether the user is banned
-  
-  
+  email    String  @unique
+  password String // Will be hashed
+  role     String  @default("user") // "user" or "admin"
+  isBanned Boolean @default(false) // Whether the user is banned
+
   // Profile Fields
-  gender    String?  // "male", "female", "other"
-  age       Int?     // Age in years
-  bio       String?  @db.Text // User biography
-  birthDate DateTime? // Birth date for age calculation
-  profileImage String? @db.Text // Base64 or URL
-  gallery   String[] @default([]) // Array of up to 5 additional base64/URL images
-  
+  gender       String? // "male", "female", "other"
+  age          Int? // Age in years
+  bio          String?   @db.Text // User biography
+  birthDate    DateTime? // Birth date for age calculation
+  profileImage String?   @db.Text // Base64 or URL
+  gallery      String[]  @default([]) // Array of up to 5 additional base64/URL images
+
   // Privacy Settings
   isProfilePublic Boolean @default(true) // Allow public viewing
   showGender      Boolean @default(true) // Show gender field
@@ -37,69 +36,70 @@ model User {
   showBio         Boolean @default(true) // Show bio field
   showInterests   Boolean @default(true) // Show interests field
   showEmail       Boolean @default(false) // Show email (default private)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  interests String[] @default([])
-  travelStyle Json?    // Detailed travel preferences from quiz
-  embedding Json?    // AI Vector for recommendation
-  fcmToken  String?  // Firebase Cloud Messaging Token for Push Notifications
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  interests          String[]  @default([])
+  travelStyle        Json? // Detailed travel preferences from quiz
+  embedding          Json? // AI Vector for recommendation
+  fcmToken           String? // Firebase Cloud Messaging Token for Push Notifications
   // Verification System
-  isEmailVerified    Boolean @default(false)
+  isEmailVerified    Boolean   @default(false)
   otpCode            String?
   otpExpiresAt       DateTime?
-  isVerified         Boolean @default(false)
-  verificationStatus String  @default("unverified") // "unverified", "pending", "verified", "rejected"
-  idCardImage        String? @db.Text
-  faceScanImage      String? @db.Text
-  
+  isVerified         Boolean   @default(false)
+  verificationStatus String    @default("unverified") // "unverified", "pending", "verified", "rejected"
+  idCardImage        String?   @db.Text
+  faceScanImage      String?   @db.Text
+
   // Relations
-  trips     Trip[]   // Trips created by this user
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  trips            Trip[] // Trips created by this user
+  sentMessages     Message[]     @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
   joinedTrips      Participant[] // Trips joined by this user
-  
-  reportsSent      Report[] @relation("ReporterUser")
-  reportsReceived  Report[] @relation("ReportedUser")
-  
+
+  reportsSent     Report[] @relation("ReporterUser")
+  reportsReceived Report[] @relation("ReportedUser")
+
   @@map("users")
 }
 
 // Trip/Activity model
 model Trip {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   title           String
   destination     String
   description     String?
-  startDate       DateTime @map("start_date")
+  startDate       DateTime  @map("start_date")
   endDate         DateTime? @map("end_date")
-  budget          Int      @default(1000) // Budget in THB (minimum 100)
-  budgetType      String   @default("per_person") @map("budget_type") // "per_person" or "per_trip"
-  maxParticipants Int      @default(10) @map("max_participants")
-activityStyle   Int?     @default(5) @map("activity_style")
-timeOfDay       String[] @default([]) @map("time_of_day")
-budgetRating    Int?     @default(5) @map("budget_rating")
-  category        String?  // "กินเที่ยว", "กีฬา", "ปาร์ตี้", etc.
-  isPublic        Boolean  @default(true) @map("is_public")
-  imageUrl        String?  @db.Text // Base64 image data (main image)
-  gallery         String[] @default([]) // Additional images (array of URLs or base64)
-  itinerary       Json?    // Custom itinerary created by trip creator
-  embedding       Json?    // AI Vector for recommendation
-  creatorId       String   @map("creator_id")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  summary         String?  @db.Text
-  groupAnalysis   String?  @db.Text
-  
+  budget          Int       @default(1000) // Budget in THB (minimum 100)
+  budgetType      String    @default("per_person") @map("budget_type") // "per_person" or "per_trip"
+  maxParticipants Int       @default(10) @map("max_participants")
+  activityStyle   Int?      @default(5) @map("activity_style")
+  timeOfDay       String[]  @default([]) @map("time_of_day")
+  budgetRating    Int?      @default(5) @map("budget_rating")
+  category        String? // "กินเที่ยว", "กีฬา", "ปาร์ตี้", etc.
+  interestTags    String[]  @default([]) @map("interest_tags") // Up to 2 additional matching categories
+  isPublic        Boolean   @default(true) @map("is_public")
+  imageUrl        String?   @db.Text // Base64 image data (main image)
+  gallery         String[]  @default([]) // Additional images (array of URLs or base64)
+  itinerary       Json? // Custom itinerary created by trip creator
+  embedding       Json? // AI Vector for recommendation
+  creatorId       String    @map("creator_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  summary         String?   @db.Text
+  groupAnalysis   String?   @db.Text
+
   // Relations
   creator      User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   participants Participant[]
-  messages     Message[]     // Group chat messages
-  
-  @@map("trips")
+  messages     Message[] // Group chat messages
+
   @@index([creatorId])
   @@index([category])
   @@index([destination])
+  @@map("trips")
 }
 
 // Participant model (users who joined a trip)
@@ -107,18 +107,18 @@ model Participant {
   id        String   @id @default(uuid())
   tripId    String   @map("trip_id")
   userId    String   @map("user_id")
-  name      String   // For now, just store name
+  name      String // For now, just store name
   interests String[] // Array of interests
   status    String   @default("going") // "going" or "interested"
   joinedAt  DateTime @default(now()) @map("joined_at")
-  
+
   // Relations
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@unique([tripId, userId]) // Can't join same trip twice
-  @@map("participants")
   @@index([tripId])
+  @@map("participants")
 }
 
 // Message model (for both group chat and private chat)
@@ -131,16 +131,16 @@ model Message {
   createdAt  DateTime @default(now()) @map("created_at")
   isRead     Boolean  @default(false) @map("is_read")
   imageUrl   String?  @db.Text
-  
+
   // Relations
   sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User? @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   trip     Trip? @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  
-  @@map("messages")
+
   @@index([senderId])
   @@index([receiverId])
   @@index([tripId])
+  @@map("messages")
 }
 
 // Notification model
@@ -153,25 +153,25 @@ model Notification {
   userId    String?  @map("user_id") // Null = send to all users
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
-  
-  @@map("notifications")
+
   @@index([userId])
   @@index([targetId])
   @@index([createdAt])
+  @@map("notifications")
 }
 
 // User Profile Reports
 model Report {
-  id          String   @id @default(uuid())
-  reason      String   @db.Text
-  status      String   @default("pending") // "pending", "reviewed", "resolved"
-  createdAt   DateTime @default(now())
-  
-  reporterId  String
-  reporter    User     @relation("ReporterUser", fields: [reporterId], references: [id])
-  
-  reportedId  String
-  reported    User     @relation("ReportedUser", fields: [reportedId], references: [id])
+  id        String   @id @default(uuid())
+  reason    String   @db.Text
+  status    String   @default("pending") // "pending", "reviewed", "resolved"
+  createdAt DateTime @default(now())
+
+  reporterId String
+  reporter   User   @relation("ReporterUser", fields: [reporterId], references: [id])
+
+  reportedId String
+  reported   User   @relation("ReportedUser", fields: [reportedId], references: [id])
 
   @@map("user_reports")
 }

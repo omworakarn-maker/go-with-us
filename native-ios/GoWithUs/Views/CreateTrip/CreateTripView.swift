@@ -13,6 +13,7 @@ struct CreateTripView: View {
     @State private var budgetType = "per_person"
     @State private var maxParticipants = "10"
     @State private var selectedCategoryRaw: String = TripCategory.adventure.rawValue
+    @State private var additionalInterests: [String] = []
     @State private var imageUrl = ""
     @State private var selectedImages: [UIImage] = []
     @State private var isPublic = true // Default to Public
@@ -75,6 +76,13 @@ struct CreateTripView: View {
                     ? draft.category
                     : TripCategory.adventure.rawValue
             )
+            _additionalInterests = State(
+                initialValue: Array(
+                    (draft.interestTags ?? [])
+                        .filter { allowedCategories.contains($0) && $0 != draft.category }
+                        .prefix(2)
+                )
+            )
             
             // Tags from AI draft
             if let draftTags = draft.tags {
@@ -108,6 +116,13 @@ struct CreateTripView: View {
             initialValue: INTEREST_CATEGORIES.contains { $0.label == trip.category.rawValue }
                 ? trip.category.rawValue
                 : TripCategory.adventure.rawValue
+        )
+        _additionalInterests = State(
+            initialValue: Array(
+                trip.interestTags
+                    .filter { $0 != trip.category.rawValue }
+                    .prefix(2)
+            )
         )
         _imageUrl = State(initialValue: trip.imageUrl ?? "")
         _isPublic = State(initialValue: trip.isPublic)
@@ -831,6 +846,7 @@ struct CreateTripView: View {
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         selectedCategoryRaw = category.label
+                        additionalInterests.removeAll { $0 == category.label }
                     } label: {
                         VStack(spacing: 8) {
                             Text(category.icon)
@@ -863,6 +879,69 @@ struct CreateTripView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("สไตล์ทริป \(category.label)")
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
+                }
+            }
+
+            Divider().padding(.vertical, 4)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("ความชอบเพิ่มเติม")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.adaptiveText)
+                    Text("เลือกได้ไม่เกิน 2 รายการ เพื่ออธิบายกิจกรรมในทริปให้ตรงขึ้น")
+                        .font(.caption)
+                        .foregroundColor(.adaptiveSecondaryText)
+                }
+                Spacer()
+                Text("\(additionalInterests.count)/2")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.appPrimary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(Color.appPrimary.opacity(0.10))
+                    .clipShape(Capsule())
+            }
+
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 10
+            ) {
+                ForEach(INTEREST_CATEGORIES.filter { $0.label != selectedCategoryRaw }) { category in
+                    let isSelected = additionalInterests.contains(category.label)
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        if isSelected {
+                            additionalInterests.removeAll { $0 == category.label }
+                        } else if additionalInterests.count < 2 {
+                            additionalInterests.append(category.label)
+                        }
+                    } label: {
+                        HStack(spacing: 7) {
+                            Text(category.icon)
+                            Text(category.label)
+                                .font(.system(size: 12, weight: .semibold))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13, weight: .bold))
+                            }
+                        }
+                        .padding(.horizontal, 11)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .foregroundColor(isSelected ? .white : .adaptiveText)
+                        .background(isSelected ? Color.appPrimary : Color.gray.opacity(0.06))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(isSelected ? Color.appPrimary : Color.gray.opacity(0.16), lineWidth: 1)
+                        }
+                        .opacity(!isSelected && additionalInterests.count >= 2 ? 0.45 : 1)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!isSelected && additionalInterests.count >= 2)
                 }
             }
         }
@@ -990,6 +1069,10 @@ struct CreateTripView: View {
             ReviewRow(label: "ชื่อทริป", value: title)
             ReviewRow(label: "สถานที่", value: specificLocation.isEmpty ? destination : "\(destination) (\(specificLocation))")
             ReviewRow(label: "หมวดหมู่", value: selectedCategoryRaw)
+            ReviewRow(
+                label: "ความชอบเพิ่มเติม",
+                value: additionalInterests.isEmpty ? "ไม่ได้เลือก" : additionalInterests.joined(separator: ", ")
+            )
             ReviewRow(label: "วันที่เริ่ม", value: startDate.formatted(date: .abbreviated, time: .omitted))
             ReviewRow(label: "วันที่สิ้นสุด", value: endDate?.formatted(date: .abbreviated, time: .omitted) ?? "วันเดียว")
             ReviewRow(label: "งบประมาณ", value: "\(budget) บาท \(budgetType == "per_trip" ? "ต่อทริป" : "ต่อคน")")
@@ -1036,11 +1119,13 @@ struct CreateTripView: View {
             description = trip.description ?? ""; startDate = trip.startDate; endDate = trip.endDate
             budget = String(trip.budget); budgetType = trip.budgetType ?? "per_person"
             maxParticipants = String(trip.maxParticipants); selectedCategoryRaw = trip.category.rawValue
+            additionalInterests = Array(trip.interestTags.filter { $0 != trip.category.rawValue }.prefix(2))
             isPublic = trip.isPublic; itinerary = trip.itinerary; timeOfDay = trip.timeOfDay ?? []
         } else if let draft {
             title = draft.title; destination = draft.destination; description = draft.description
             budget = String(draft.budget); budgetType = draft.budgetType ?? "per_person"
             maxParticipants = String(draft.maxParticipants); itinerary = draft.itinerary
+            additionalInterests = Array((draft.interestTags ?? []).filter { $0 != draft.category }.prefix(2))
             timeOfDay = draft.timeOfDay ?? []
         }
     }
@@ -1167,6 +1252,7 @@ struct CreateTripView: View {
                         budgetType: budgetType,
                         maxParticipants: maxPart,
                         category: selectedCategoryRaw,
+                        interestTags: additionalInterests,
                         isPublic: isPublic,
                         imageUrl: mainImageUrl,
                         gallery: galleryImages,
@@ -1186,6 +1272,7 @@ struct CreateTripView: View {
                         budgetType: budgetType,
                         maxParticipants: maxPart,
                         category: selectedCategoryRaw,
+                        interestTags: additionalInterests,
                         isPublic: isPublic,
                         imageUrl: mainImageUrl,
                         gallery: galleryImages,
@@ -1258,6 +1345,7 @@ struct CreateTripView: View {
         - จำนวนคนสูงสุด: \(maxParticipants)
         - งบประมาณ: \(budgetValue == 0 ? "ไม่ได้ระบุ" : "\(budgetValue) บาท") (\(budgetType == "per_trip" ? "ต่อทริป" : "ต่อคน"))
         - หมวดหมู่: \(selectedCategoryRaw)
+        - ความชอบเพิ่มเติม: \(additionalInterests.isEmpty ? "ไม่ได้เลือก" : additionalInterests.joined(separator: ", "))
         - ช่วงเวลาที่เลือก: \(timeOfDay.isEmpty ? "ไม่ได้จำกัด" : timeOfDay.joined(separator: ", "))
         - รายละเอียดเดิม: \(description.isEmpty ? "ยังไม่มี" : description)
         \(aiPrompt.isEmpty ? "" : "- คำขอพิเศษที่ต้องปฏิบัติตาม: \(aiPrompt)")
@@ -1271,7 +1359,8 @@ struct CreateTripView: View {
         6. description เขียนสั้น 2–3 ประโยคในมุมเจ้าของทริปที่ชวนเพื่อนไปเที่ยว ห้ามกล่าวถึง AI
         7. ห้ามสร้างชื่อสถานที่หรือข้อเท็จจริงเฉพาะที่ไม่มั่นใจ และห้ามใช้อีโมจิ
         8. category ต้องเป็นหนึ่งในรายการนี้เท่านั้น: ทะเล, ภูเขา, แคมป์ปิ้ง, ผจญภัย, เที่ยวเมือง, คาเฟ่, อาหาร, ช้อปปิ้ง, ถ่ายรูป, คอนเสิร์ต, แฮงเอาต์, ไหว้พระ ห้ามใช้คำว่าอื่นๆ และห้ามสร้างหมวดหมู่ใหม่
-        9. ตอบ JSON เพียงก้อนเดียว ห้าม Markdown และห้ามข้อความอื่น
+        9. interestTags เลือกได้ไม่เกิน 2 รายการจากรายการเดียวกับ category ห้ามซ้ำกับ category และต้องสัมพันธ์กับ itinerary จริง
+        10. ตอบ JSON เพียงก้อนเดียว ห้าม Markdown และห้ามข้อความอื่น
 
         JSON schema ที่ต้องตอบ:
         { 
@@ -1280,6 +1369,7 @@ struct CreateTripView: View {
           "description": "...", 
           "tags": ["..."], 
           "category": "...",
+          "interestTags": ["..."],
           "activityStyle": 5,
           "timeOfDay": ["morning", "noon"],
           "itinerary": [
@@ -1332,6 +1422,19 @@ struct CreateTripView: View {
                         if let c = dict["category"] as? String,
                            INTEREST_CATEGORIES.contains(where: { $0.label == c }) {
                             self.selectedCategoryRaw = c
+                        }
+                        if let extraInterests = dict["interestTags"] as? [String] {
+                            self.additionalInterests = Array(
+                                extraInterests
+                                    .filter { interest in
+                                        interest != self.selectedCategoryRaw
+                                            && INTEREST_CATEGORIES.contains(where: { $0.label == interest })
+                                    }
+                                    .reduce(into: [String]()) { result, interest in
+                                        if !result.contains(interest) { result.append(interest) }
+                                    }
+                                    .prefix(2)
+                            )
                         }
                         if let tTags = dict["tags"] as? [String] {
                             for tag in tTags {

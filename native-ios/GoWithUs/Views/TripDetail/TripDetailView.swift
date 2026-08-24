@@ -387,7 +387,7 @@ struct TripDetailView: View {
                     let bd = trip.matchBreakdown
                     compatibilityRow(
                         icon: "banknote",
-                        label: bd?.budget == 0 ? "งบประมาณ (เกินงบมาก)" : "งบประมาณ",
+                        label: "งบประมาณ",
                         color: Color(hex: "#3B82F6"),
                         score: bd?.budget
                     )
@@ -396,12 +396,6 @@ struct TripDetailView: View {
                     compatibilityRow(icon: "clock.fill", label: "ช่วงเวลา", color: Color(hex: "#EF4444"), score: bd?.timeOfDay)
                 }
 
-                if trip.matchBreakdown?.budget == 0 {
-                    Text("ทริปนี้มีงบสูงกว่าที่คุณกำหนดเกิน 2 เท่า คะแนนรวมจึงไม่เกิน 39%")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color(hex: "#EF4444"))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
             .padding(18)
             .background(Color.adaptiveCardBackground)
@@ -477,7 +471,7 @@ struct TripDetailView: View {
         switch score {
         case 75...100: return "🎉 ไปได้แน่นอนไปกันรอด"
         case 50...74:  return "👍 โอเคไปกันได้"
-        case 25...49:  return "🤔 พอได้แต่ไม่แนะนำ"
+        case 25...49:  return "🤔 ไม่ค่อยแนะนำ"
         default:       return "😅 เข้าไม่ได้"
         }
     }

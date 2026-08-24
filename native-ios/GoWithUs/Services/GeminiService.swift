@@ -53,6 +53,7 @@ class GeminiService {
           "budget": 500,
           "maxParticipants": 10,
           "category": "สไตล์ภาษาไทยจากรายการข้อ 4",
+          "interestTags": ["ความชอบเพิ่มเติมไม่เกิน 2 รายการและห้ามซ้ำ category"],
           "activityStyle": 5,
           "timeOfDay": ["morning", "noon"],
           "tags": ["tag1", "tag2"],

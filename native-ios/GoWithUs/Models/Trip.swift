@@ -12,6 +12,7 @@ struct Trip: Codable, Identifiable, Hashable {
     let budgetType: String?
     let maxParticipants: Int
     let category: TripCategory
+    let interestTags: [String]
     let isPublic: Bool
     let imageUrl: String?
     let gallery: [String]?
@@ -42,6 +43,7 @@ struct Trip: Codable, Identifiable, Hashable {
         budgetType: String? = "per_person",
         maxParticipants: Int,
         category: TripCategory,
+        interestTags: [String] = [],
         isPublic: Bool = true,
         imageUrl: String? = nil,
         gallery: [String]? = nil,
@@ -67,6 +69,7 @@ struct Trip: Codable, Identifiable, Hashable {
         self.budgetType = budgetType
         self.maxParticipants = maxParticipants
         self.category = category
+        self.interestTags = interestTags
         self.isPublic = isPublic
         self.imageUrl = imageUrl
         self.gallery = gallery
@@ -84,7 +87,7 @@ struct Trip: Codable, Identifiable, Hashable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, title, destination, description, startDate, endDate, budget, budgetType, maxParticipants, category, isPublic, imageUrl, gallery, creatorId, creator, participants, itinerary, activityStyle, timeOfDay, aiAnalysis, matchScore, matchBreakdown, createdAt, updatedAt
+        case id, title, destination, description, startDate, endDate, budget, budgetType, maxParticipants, category, interestTags, isPublic, imageUrl, gallery, creatorId, creator, participants, itinerary, activityStyle, timeOfDay, aiAnalysis, matchScore, matchBreakdown, createdAt, updatedAt
     }
     
     init(from decoder: Decoder) throws {
@@ -99,6 +102,7 @@ struct Trip: Codable, Identifiable, Hashable {
         budgetType = try container.decodeIfPresent(String.self, forKey: .budgetType)
         maxParticipants = try container.decode(Int.self, forKey: .maxParticipants)
         category = try container.decode(TripCategory.self, forKey: .category)
+        interestTags = try container.decodeIfPresent([String].self, forKey: .interestTags) ?? []
         isPublic = try container.decodeIfPresent(Bool.self, forKey: .isPublic) ?? true
         imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
         gallery = try container.decodeIfPresent([String].self, forKey: .gallery)

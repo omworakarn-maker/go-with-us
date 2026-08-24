@@ -1,0 +1,2 @@
+ALTER TABLE "trips"
+ADD COLUMN "interest_tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

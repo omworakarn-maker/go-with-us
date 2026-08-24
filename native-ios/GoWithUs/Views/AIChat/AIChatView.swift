@@ -276,6 +276,7 @@ struct AIChatView: View {
                     budgetType: draft.budgetType,
                     maxParticipants: draft.maxParticipants,
                     category: draft.category,
+                    interestTags: draft.interestTags ?? [],
                     isPublic: true,
                     itinerary: draft.itinerary,
                     activityStyle: draft.activityStyle,

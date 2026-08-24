@@ -3,6 +3,17 @@ import { generateEmbedding } from '../utils/gemini.js';
 import { calculateTripCompatibilityDetailed } from './matchController.js';
 import { calculateActivityStyleFromItinerary } from '../utils/tripActivityStyle.js';
 
+const TRIP_INTEREST_CATEGORIES = new Set([
+    'ทะเล', 'ภูเขา', 'แคมป์ปิ้ง', 'เที่ยวเมือง', 'คาเฟ่', 'อาหาร',
+    'แฮงเอาต์', 'ถ่ายรูป', 'ช้อปปิ้ง', 'คอนเสิร์ต', 'ผจญภัย', 'ไหว้พระ'
+]);
+
+const normalizeTripInterestTags = (interestTags, category) => (
+    [...new Set(Array.isArray(interestTags) ? interestTags : [])]
+        .filter(tag => TRIP_INTEREST_CATEGORIES.has(tag) && tag !== category)
+        .slice(0, 2)
+);
+
 // Get all trips with filters
 export const getAllTrips = async (req, res, next) => {
     try {
@@ -57,6 +68,7 @@ export const getAllTrips = async (req, res, next) => {
                 if (user?.interests?.length > 0) {
                     where.OR = [
                         { category: { in: user.interests } },
+                        { interestTags: { hasSome: user.interests } },
                         { creatorId: userId }
                     ];
                 }
@@ -256,6 +268,7 @@ export const createTrip = async (req, res, next) => {
             budgetType,
             maxParticipants,
             category,
+            interestTags,
             imageUrl,
             gallery,
             itinerary,
@@ -282,7 +295,10 @@ export const createTrip = async (req, res, next) => {
         }
 
         // Embedding is optional. A Gemini outage/quota error must never block trip creation.
-        const generatedEmbedding = await generateEmbedding(`${title} ${description || ''} ${category || ''} ${destination}`);
+        const normalizedInterestTags = normalizeTripInterestTags(interestTags, category);
+        const generatedEmbedding = await generateEmbedding(
+            `${title} ${description || ''} ${category || ''} ${normalizedInterestTags.join(' ')} ${destination}`
+        );
 
         console.log(`Creating trip with ${gallery?.length || 0} gallery images and ${itinerary?.length || 0} itinerary days`);
 
@@ -297,6 +313,7 @@ export const createTrip = async (req, res, next) => {
                 budgetType: budgetType || 'per_person',
                 maxParticipants: maxParticipants ? Number(maxParticipants) : 10,
                 category: category || null,
+                interestTags: normalizedInterestTags,
                 imageUrl: (imageUrl !== undefined && imageUrl !== null) ? imageUrl : null,
                 gallery: Array.isArray(gallery) ? gallery : (gallery ? [gallery] : []),
                 itinerary: itinerary || [],
@@ -351,6 +368,7 @@ export const updateTrip = async (req, res, next) => {
             budgetType,
             maxParticipants,
             category,
+            interestTags,
             imageUrl,
             gallery,
             itinerary,
@@ -384,10 +402,16 @@ export const updateTrip = async (req, res, next) => {
         const nextStartDate = startDate || existingTrip.startDate;
         const nextEndDate = endDate !== undefined ? endDate : existingTrip.endDate;
         const shouldRecalculateActivityStyle = itinerary !== undefined || startDate !== undefined || endDate !== undefined;
-        const shouldRegenerateEmbedding = Boolean(title || description !== undefined || category !== undefined || destination);
+        const nextCategory = category !== undefined ? category : existingTrip.category;
+        const nextInterestTags = interestTags !== undefined
+            ? normalizeTripInterestTags(interestTags, nextCategory)
+            : normalizeTripInterestTags(existingTrip.interestTags, nextCategory);
+        const shouldRegenerateEmbedding = Boolean(
+            title || description !== undefined || category !== undefined || interestTags !== undefined || destination
+        );
         const updatedEmbedding = shouldRegenerateEmbedding
             ? await generateEmbedding(
-                `${title || existingTrip.title} ${description !== undefined ? description : (existingTrip.description || '')} ${category !== undefined ? category : (existingTrip.category || '')} ${destination || existingTrip.destination}`
+                `${title || existingTrip.title} ${description !== undefined ? description : (existingTrip.description || '')} ${nextCategory || ''} ${nextInterestTags.join(' ')} ${destination || existingTrip.destination}`
             )
             : null;
 
@@ -403,6 +427,7 @@ export const updateTrip = async (req, res, next) => {
                 ...(budgetType !== undefined && { budgetType }),
                 ...(maxParticipants && { maxParticipants }),
                 ...(category !== undefined && { category }),
+                ...(interestTags !== undefined && { interestTags: nextInterestTags }),
                 ...(imageUrl !== undefined && { imageUrl }),
                 ...(isPublic !== undefined && { isPublic }),
                 ...(gallery !== undefined && { gallery }),

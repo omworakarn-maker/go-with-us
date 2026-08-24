@@ -93,6 +93,7 @@ class TripService {
         budgetType: String? = nil,
         maxParticipants: Int,
         category: String,
+        interestTags: [String] = [],
         isPublic: Bool = true,
         imageUrl: String? = nil,
         gallery: [String]? = nil,
@@ -110,6 +111,7 @@ class TripService {
             let budgetType: String?
             let maxParticipants: Int
             let category: String
+            let interestTags: [String]
             let isPublic: Bool
             let imageUrl: String?
             let gallery: [String]?
@@ -133,6 +135,7 @@ class TripService {
             budgetType: budgetType,
             maxParticipants: maxParticipants,
             category: category,
+            interestTags: interestTags,
             isPublic: isPublic,
             imageUrl: imageUrl,
             gallery: gallery,
@@ -162,6 +165,7 @@ class TripService {
         budgetType: String? = nil,
         maxParticipants: Int,
         category: String,
+        interestTags: [String] = [],
         isPublic: Bool? = nil,
         imageUrl: String? = nil,
         gallery: [String]? = nil,
@@ -179,6 +183,7 @@ class TripService {
             let budgetType: String?
             let maxParticipants: Int
             let category: String
+            let interestTags: [String]
             let isPublic: Bool
             let imageUrl: String?
             let gallery: [String]?
@@ -197,6 +202,7 @@ class TripService {
             budgetType: budgetType,
             maxParticipants: maxParticipants,
             category: category,
+            interestTags: interestTags,
             isPublic: isPublic ?? true,
             imageUrl: imageUrl,
             gallery: gallery,
