@@ -496,6 +496,7 @@ struct QuestionnaireInfoRow: View {
 
 #Preview {
     QuestionnaireView()
+        .environmentObject(AuthViewModel())
 }
 
 struct QuestionnaireInterestCard: View {

@@ -12,6 +12,8 @@ class NotificationPoller: ObservableObject {
     private init() {}
     
     func startPolling() {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         stopPolling()
         
         // Initial check
@@ -30,6 +32,8 @@ class NotificationPoller: ObservableObject {
     }
     
     func checkNotifications() {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         Task {
             do {
                 // 1. Get unread count for badge

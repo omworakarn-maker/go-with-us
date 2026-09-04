@@ -7,6 +7,8 @@ class ImageLoader: ObservableObject {
     private static let cache = NSCache<NSString, UIImage>()
     
     func load(from urlString: String?) {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         guard let urlString = urlString, !urlString.isEmpty else {
             return
         }
