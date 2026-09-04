@@ -2,6 +2,14 @@ import SwiftUI
 
 struct TripCardView: View {
     let trip: Trip
+
+    private var tripStyles: [String] {
+        var styles = [trip.category.rawValue]
+        for style in trip.interestTags where !styles.contains(style) {
+            styles.append(style)
+        }
+        return Array(styles.prefix(3))
+    }
     
     // Extract #hashtags from description
     private var tags: [String] {
@@ -84,6 +92,24 @@ struct TripCardView: View {
                 Text(trip.formattedDateRange)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.gray)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 7) {
+                        ForEach(tripStyles, id: \.self) { style in
+                            let icon = INTEREST_CATEGORIES.first(where: { $0.label == style })?.icon ?? "✈️"
+                            HStack(spacing: 4) {
+                                Text(icon)
+                                Text(style)
+                            }
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.adaptiveText)
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 5)
+                            .background(Color.gray.opacity(0.09))
+                            .clipShape(Capsule())
+                        }
+                    }
+                }
                 
                 Divider()
                     .background(Color.gray.opacity(0.2))

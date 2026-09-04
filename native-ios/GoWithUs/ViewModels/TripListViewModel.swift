@@ -81,7 +81,7 @@ class TripListViewModel: ObservableObject {
             }
             
             // Fix: Return early if running in SwiftUI Previews to prevent network timeout
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            if AppRuntime.isRunningForPreview {
                 self.isLoading = false
                 return
             }

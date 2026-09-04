@@ -281,19 +281,28 @@ struct TripDetailView: View {
     @ViewBuilder
     private func badgesRow(trip: Trip) -> some View {
         HStack(spacing: 8) {
-            // Category
-            HStack(spacing: 5) {
-                let iconName = INTEREST_CATEGORIES.first(where: { $0.id == trip.category.rawValue })?.icon ?? "✈️"
-                Text(iconName).font(.system(size: 10, weight: .bold))
-                Text(trip.category.rawValue).font(.system(size: 12, weight: .bold))
+            let styles = Array(([trip.category.rawValue] + trip.interestTags).reduce(into: [String]()) { result, style in
+                if !result.contains(style) { result.append(style) }
+            }.prefix(3))
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(styles, id: \.self) { style in
+                        HStack(spacing: 5) {
+                            let iconName = INTEREST_CATEGORIES.first(where: { $0.label == style })?.icon ?? "✈️"
+                            Text(iconName).font(.system(size: 11))
+                            Text(style).font(.system(size: 12, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(Color.black)
+                        .clipShape(Capsule())
+                    }
+                }
             }
-            .foregroundColor(.white)
-            .padding(.horizontal, 14).padding(.vertical, 7)
-            .background(Color.black)
-            .clipShape(Capsule())
-            
-            Spacer()
-            
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             // Status
             if trip.isFull {
                 HStack(spacing: 4) {

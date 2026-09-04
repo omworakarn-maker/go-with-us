@@ -1,0 +1,638 @@
+{
+  "item": [
+    {
+      "name": "IT-01 Authentication",
+      "item": [
+        {
+          "id": "8a2f4a01-8f91-421d-858c-a304e54c7c99",
+          "name": "IT-01 Login User A",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"password\": \"{{passwordA}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "72c5dc80-350c-4b6d-99e6-269226512ca6",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-01 Login A: 200 OK', () => pm.response.to.have.status(200));",
+                  "var loginAResponse = pm.response.json();",
+                  "pm.expect(loginAResponse.token).to.be.a('string').and.not.empty;",
+                  "pm.collectionVariables.set('tokenA', loginAResponse.token);"
+                ],
+                "_lastExecutionId": "f45cce51-1dc8-448a-ad0f-1a36327f7e44"
+              }
+            }
+          ]
+        },
+        {
+          "id": "135360bd-4bab-4345-980e-79f8cf2c750c",
+          "name": "IT-01 Login User B",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailB}}\",\n  \"password\": \"{{passwordB}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "147c4b65-b34a-42c7-b4ab-483bb96e8bfe",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-01 Login B: 200 OK', () => pm.response.to.have.status(200));",
+                  "var loginBResponse = pm.response.json();",
+                  "pm.expect(loginBResponse.token).to.be.a('string').and.not.empty;",
+                  "pm.collectionVariables.set('tokenB', loginBResponse.token);"
+                ],
+                "_lastExecutionId": "8c073396-729d-40c0-9c6b-639e4b1e2088"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-02 Registration",
+      "item": [
+        {
+          "id": "31157014-4ac6-448d-8710-63d75cff8e8a",
+          "name": "IT-02 Register New User",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Integration Register Test\",\n  \"email\": \"{{emailC}}\",\n  \"password\": \"{{passwordB}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "edb1201f-a091-4914-b0a7-3b80c72a389e",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-02 Register: 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.expect(pm.response.json().message).to.eql('User registered successfully');"
+                ],
+                "_lastExecutionId": "54bc02f6-c825-4084-9922-1b344530c247"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-03 User DNA",
+      "item": [
+        {
+          "id": "916a47d2-8cec-4c45-8099-89b1ce8f271c",
+          "name": "IT-03 Update User DNA A",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interests\": [\"ทะเล\", \"คาเฟ่\", \"ถ่ายรูป\"],\n  \"travelStyle\": {\n    \"budget\": 1500,\n    \"activityStyle\": 5,\n    \"timeOfDay\": [\"morning\", \"evening\"]\n  }\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "ca3cda04-44e8-4ad6-a5d2-1e630b2523b6",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-03 Update User DNA A: 200 OK', () => pm.response.to.have.status(200));"
+                ],
+                "_lastExecutionId": "30380df7-f208-4a2f-bcfd-f940613121fe"
+              }
+            }
+          ]
+        },
+        {
+          "id": "f929c283-957c-40cf-9c27-28dc05871bdb",
+          "name": "IT-03 Update User DNA B",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "users",
+                "profile"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "PUT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interests\": [\"ทะเล\", \"ถ่ายรูป\", \"อาหาร\"],\n  \"travelStyle\": {\n    \"budget\": 1200,\n    \"activityStyle\": 5,\n    \"timeOfDay\": [\"morning\", \"noon\"]\n  }\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "724c5329-e75d-4fb8-91d6-bd2e6df13904",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-03 Update User DNA B: 200 OK', () => pm.response.to.have.status(200));"
+                ],
+                "_lastExecutionId": "e321711d-053b-4152-b195-ab3967a81837"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-04 Trip Create and Read",
+      "item": [
+        {
+          "id": "4f8eb4f6-5c80-4c9e-85e1-bc5eea41b79f",
+          "name": "IT-04 Create Trip",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "trips"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ทริปทดสอบ Integration\",\n  \"destination\": \"ชลบุรี (พัทยา)\",\n  \"description\": \"ทริปสำหรับทดสอบการเชื่อมต่อระบบ\",\n  \"startDate\": \"2026-09-20\",\n  \"endDate\": \"2026-09-20\",\n  \"budget\": 1000,\n  \"budgetType\": \"per_person\",\n  \"maxParticipants\": 4,\n  \"category\": \"ทะเล\",\n  \"interestTags\": [\"ถ่ายรูป\", \"อาหาร\"],\n  \"timeOfDay\": [\"morning\", \"noon\"],\n  \"isPublic\": true,\n  \"itinerary\": [{\n    \"day\": 1,\n    \"activities\": [\n      {\"time\":\"09:00\",\"name\":\"เที่ยวชายหาด\",\"location\":\"หาดพัทยา\",\"description\":\"เดินเล่นและถ่ายรูป\"},\n      {\"time\":\"12:00\",\"name\":\"รับประทานอาหาร\",\"location\":\"ร้านอาหารริมทะเล\",\"description\":\"อาหารกลางวัน\"},\n      {\"time\":\"14:00\",\"name\":\"คาเฟ่\",\"location\":\"คาเฟ่พัทยา\",\"description\":\"พักผ่อน\"}\n    ]\n  }]\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "fced81d5-01ed-46a0-a625-89459b618e2f",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-04 Create Trip: 201 Created', () => pm.response.to.have.status(201));",
+                  "var createTripResponse = pm.response.json();",
+                  "pm.expect(createTripResponse.trip.id).to.be.a('string');",
+                  "pm.collectionVariables.set('tripId', createTripResponse.trip.id);"
+                ],
+                "_lastExecutionId": "89d6eba9-bf6e-4160-aa82-97ba31ddcca3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "928071f5-d713-495b-9b8b-6535acbf9cb7",
+          "name": "IT-04 Read Created Trip",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "trips",
+                "{{tripId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenA}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "c0a61dc9-dd09-477f-ab20-6879d635ce03",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-04 Read Trip: 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.expect(pm.response.json().trip.title).to.eql('ทริปทดสอบ Integration');"
+                ],
+                "_lastExecutionId": "379ddfb8-6b54-4f34-9926-6316c75ea720"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-05 Smart Matching",
+      "item": [
+        {
+          "id": "c9c1d264-173b-4070-8760-6d63ff7562a2",
+          "name": "IT-05 Smart Matching",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "match",
+                "trips"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "643aa9b7-f673-461c-b09e-ff79775e1220",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-05 Matching: 200 OK', () => pm.response.to.have.status(200));",
+                  "const payload = pm.response.json();",
+                  "const trips = Array.isArray(payload) ? payload : (payload.trips || payload.matches || []);",
+                  "const target = trips.find(t => t.id === pm.collectionVariables.get('tripId'));",
+                  "pm.expect(target, 'created trip is returned').to.exist;",
+                  "pm.expect(target.matchScore).to.be.a('number');"
+                ],
+                "_lastExecutionId": "fcf3255b-3072-43fa-8d3d-71928db9c491"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-06 Join Trip",
+      "item": [
+        {
+          "id": "19420755-c906-4e8e-9976-82a758c9d05e",
+          "name": "IT-06 Join Trip",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "trips",
+                "{{tripId}}",
+                "join"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Integration User B\",\n  \"interests\": [\"ทะเล\", \"ถ่ายรูป\"],\n  \"status\": \"going\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "1ccaa41f-2aa8-4882-9b5a-12cfb12c3590",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-06 Join Trip: 201 Created', () => pm.response.to.have.status(201));"
+                ],
+                "_lastExecutionId": "aaa7d897-c9fc-46ee-ab39-38429e0c3f59"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-08 Messages",
+      "item": [
+        {
+          "id": "33793eb9-7401-4528-93b5-21a8fb627c82",
+          "name": "IT-08 Send Message",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "messages",
+                "trips",
+                "{{tripId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"ข้อความทดสอบ Integration Testing\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "e5107e21-704a-4f2c-a913-08e044875e33",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-08 Send Message: 201 Created', () => pm.response.to.have.status(201));"
+                ],
+                "_lastExecutionId": "5ecdf6f5-7517-454c-9d65-e0ccddffeea4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "b36e74e7-46d1-4e32-b86e-f05b8b877800",
+          "name": "IT-08 Read Messages",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "messages",
+                "trips",
+                "{{tripId}}"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "GET"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "7761a14f-b1be-4a8d-b120-9b54c446ea66",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-08 Read Messages: 200 OK', () => pm.response.to.have.status(200));",
+                  "const messages = pm.response.json().messages || [];",
+                  "pm.expect(messages.some(m => m.content === 'ข้อความทดสอบ Integration Testing')).to.be.true;"
+                ],
+                "_lastExecutionId": "447e1a8c-f530-40c5-92f7-3f370e4dbfa3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IT-07 Leave Trip (run last)",
+      "item": [
+        {
+          "id": "53358bd1-b567-4034-8eab-fd87aa0b98e2",
+          "name": "IT-07 Leave Trip",
+          "request": {
+            "url": {
+              "path": [
+                "api",
+                "trips",
+                "{{tripId}}",
+                "leave"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenB}}"
+              }
+            ],
+            "method": "DELETE"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "f0ef9523-d861-4422-a0f5-24bf952b8d93",
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('IT-07 Leave Trip: 200 OK', () => pm.response.to.have.status(200));"
+                ],
+                "_lastExecutionId": "e8a06207-f27a-4066-af07-f11a50ff8b53"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "any",
+      "value": "https://go-with-us-czc8.onrender.com",
+      "key": "baseUrl"
+    },
+    {
+      "type": "any",
+      "value": "test@gmail.com",
+      "key": "emailA"
+    },
+    {
+      "type": "any",
+      "value": "it_b_20260824@example.com",
+      "key": "emailB"
+    },
+    {
+      "type": "any",
+      "value": "it_register_20260824@example.com",
+      "key": "emailC"
+    },
+    {
+      "type": "any",
+      "value": "",
+      "key": "passwordA"
+    },
+    {
+      "type": "any",
+      "value": "IntegrationTest1234",
+      "key": "passwordB"
+    },
+    {
+      "type": "any",
+      "value": "",
+      "key": "tokenA"
+    },
+    {
+      "type": "any",
+      "value": "",
+      "key": "tokenB"
+    },
+    {
+      "type": "any",
+      "value": "",
+      "key": "tripId"
+    }
+  ],
+  "info": {
+    "_postman_id": "c1d4b8cd-1e31-4218-b0ff-8cfbaa2d5f7f",
+    "name": "Go With Us Integration IT-01-IT-08",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  }
+}

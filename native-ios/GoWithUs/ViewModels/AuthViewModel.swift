@@ -21,6 +21,11 @@ class AuthViewModel: ObservableObject {
     
     // MARK: - Check Auth Status
     func checkAuthStatus() {
+        guard !AppRuntime.isRunningForPreview else {
+            isAuthenticated = false
+            return
+        }
+
         isAuthenticated = AuthService.shared.isLoggedIn()
         
         if isAuthenticated {

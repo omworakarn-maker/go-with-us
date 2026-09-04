@@ -36,6 +36,11 @@ class ChatViewModel: ObservableObject {
     
     // MARK: - Load Initial Data (Concurrent)
     func loadInitialData(force: Bool = false) async {
+        guard !AppRuntime.isRunningForPreview else {
+            isLoading = false
+            return
+        }
+
         // Cache for 3 minutes (180 seconds)
         if !force, let lastLoaded = Self.lastLoaded, Date().timeIntervalSince(lastLoaded) < 180, !conversations.isEmpty {
             return // Skip reloading if recently loaded
@@ -55,6 +60,7 @@ class ChatViewModel: ObservableObject {
     
     // MARK: - Load Mutual Matches
     func loadMutualMatches() async {
+        guard !AppRuntime.isRunningForPreview else { return }
         await loadMutualMatchesInternal()
     }
     
@@ -90,6 +96,11 @@ class ChatViewModel: ObservableObject {
     
     // MARK: - Load Conversations
     func loadConversations() async {
+        guard !AppRuntime.isRunningForPreview else {
+            isLoading = false
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         await loadConversationsInternal()

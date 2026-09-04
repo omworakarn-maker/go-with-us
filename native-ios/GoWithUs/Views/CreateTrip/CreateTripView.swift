@@ -38,6 +38,25 @@ struct CreateTripView: View {
         ("evening", "ช่วงเย็น (16:00 - 20:00 น.)", "เช่น เดินพักผ่อน, ชมพระอาทิตย์ตก, รับประทานอาหารค่ำ"),
         ("night", "ช่วงกลางคืน (20:00 น. เป็นต้นไป)", "เช่น สัมผัสบรรยากาศยามค่ำคืน, เข้าร่วมงานสังสรรค์")
     ]
+
+    private var selectedTripStyles: [String] {
+        var styles = [selectedCategoryRaw]
+        for style in additionalInterests where !styles.contains(style) {
+            styles.append(style)
+        }
+        return Array(styles.prefix(3))
+    }
+
+    private func toggleTripStyle(_ style: String) {
+        if selectedCategoryRaw == style {
+            guard !additionalInterests.isEmpty else { return }
+            selectedCategoryRaw = additionalInterests.removeFirst()
+        } else if additionalInterests.contains(style) {
+            additionalInterests.removeAll { $0 == style }
+        } else if selectedTripStyles.count < 3 {
+            additionalInterests.append(style)
+        }
+    }
     
 
     
@@ -536,7 +555,7 @@ struct CreateTripView: View {
 
                                     ReviewRow(label: "ชื่อทริป", value: title)
                                     ReviewRow(label: "สถานที่", value: specificLocation.isEmpty ? destination : "\(destination) (\(specificLocation))")
-                                    ReviewRow(label: "หมวดหมู่", value: selectedCategoryRaw)
+                                    ReviewRow(label: "สไตล์ของทริป", value: selectedTripStyles.joined(separator: ", "))
                                     ReviewRow(label: "วันที่เริ่ม", value: startDate.formatted(date: .abbreviated, time: .omitted))
                                     ReviewRow(label: "วันที่สิ้นสุด", value: endDate?.formatted(date: .abbreviated, time: .omitted) ?? "วันเดียว")
                                     ReviewRow(label: "งบประมาณ", value: "\(budget.isEmpty ? "0" : budget) บาท \(budgetType == "per_trip" ? "ต่อทริป" : "ต่อคน")")
@@ -829,9 +848,19 @@ struct CreateTripView: View {
             Text("สไตล์ของทริป")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.adaptiveText)
-            Text("เลือกหมวดหมู่หลัก 1 รายการ เพื่อจับคู่กับความสนใจของผู้ใช้ได้ตรงที่สุด")
-                .font(.caption)
-                .foregroundColor(.adaptiveSecondaryText)
+            HStack {
+                Text("เลือกได้สูงสุด 3 รายการ เพื่อใช้จับคู่กับความสนใจของผู้ใช้")
+                    .font(.caption)
+                    .foregroundColor(.adaptiveSecondaryText)
+                Spacer()
+                Text("\(selectedTripStyles.count)/3")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.appPrimary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(Color.appPrimary.opacity(0.10))
+                    .clipShape(Capsule())
+            }
 
             LazyVGrid(
                 columns: [
@@ -842,11 +871,10 @@ struct CreateTripView: View {
                 spacing: 12
             ) {
                 ForEach(INTEREST_CATEGORIES) { category in
-                    let isSelected = selectedCategoryRaw == category.label
+                    let isSelected = selectedTripStyles.contains(category.label)
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        selectedCategoryRaw = category.label
-                        additionalInterests.removeAll { $0 == category.label }
+                        toggleTripStyle(category.label)
                     } label: {
                         VStack(spacing: 8) {
                             Text(category.icon)
@@ -875,73 +903,12 @@ struct CreateTripView: View {
                             y: 3
                         )
                         .contentShape(RoundedRectangle(cornerRadius: 14))
+                        .opacity(!isSelected && selectedTripStyles.count >= 3 ? 0.45 : 1)
                     }
                     .buttonStyle(.plain)
+                    .disabled(!isSelected && selectedTripStyles.count >= 3)
                     .accessibilityLabel("สไตล์ทริป \(category.label)")
                     .accessibilityAddTraits(isSelected ? .isSelected : [])
-                }
-            }
-
-            Divider().padding(.vertical, 4)
-
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("ความชอบเพิ่มเติม")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.adaptiveText)
-                    Text("เลือกได้ไม่เกิน 2 รายการ เพื่ออธิบายกิจกรรมในทริปให้ตรงขึ้น")
-                        .font(.caption)
-                        .foregroundColor(.adaptiveSecondaryText)
-                }
-                Spacer()
-                Text("\(additionalInterests.count)/2")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.appPrimary)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(Color.appPrimary.opacity(0.10))
-                    .clipShape(Capsule())
-            }
-
-            LazyVGrid(
-                columns: [GridItem(.flexible()), GridItem(.flexible())],
-                spacing: 10
-            ) {
-                ForEach(INTEREST_CATEGORIES.filter { $0.label != selectedCategoryRaw }) { category in
-                    let isSelected = additionalInterests.contains(category.label)
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        if isSelected {
-                            additionalInterests.removeAll { $0 == category.label }
-                        } else if additionalInterests.count < 2 {
-                            additionalInterests.append(category.label)
-                        }
-                    } label: {
-                        HStack(spacing: 7) {
-                            Text(category.icon)
-                            Text(category.label)
-                                .font(.system(size: 12, weight: .semibold))
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                            if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 13, weight: .bold))
-                            }
-                        }
-                        .padding(.horizontal, 11)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 44)
-                        .foregroundColor(isSelected ? .white : .adaptiveText)
-                        .background(isSelected ? Color.appPrimary : Color.gray.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(isSelected ? Color.appPrimary : Color.gray.opacity(0.16), lineWidth: 1)
-                        }
-                        .opacity(!isSelected && additionalInterests.count >= 2 ? 0.45 : 1)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!isSelected && additionalInterests.count >= 2)
                 }
             }
         }
@@ -1068,11 +1035,7 @@ struct CreateTripView: View {
                 .font(.system(size: 20, weight: .bold))
             ReviewRow(label: "ชื่อทริป", value: title)
             ReviewRow(label: "สถานที่", value: specificLocation.isEmpty ? destination : "\(destination) (\(specificLocation))")
-            ReviewRow(label: "หมวดหมู่", value: selectedCategoryRaw)
-            ReviewRow(
-                label: "ความชอบเพิ่มเติม",
-                value: additionalInterests.isEmpty ? "ไม่ได้เลือก" : additionalInterests.joined(separator: ", ")
-            )
+            ReviewRow(label: "สไตล์ของทริป", value: selectedTripStyles.joined(separator: ", "))
             ReviewRow(label: "วันที่เริ่ม", value: startDate.formatted(date: .abbreviated, time: .omitted))
             ReviewRow(label: "วันที่สิ้นสุด", value: endDate?.formatted(date: .abbreviated, time: .omitted) ?? "วันเดียว")
             ReviewRow(label: "งบประมาณ", value: "\(budget) บาท \(budgetType == "per_trip" ? "ต่อทริป" : "ต่อคน")")

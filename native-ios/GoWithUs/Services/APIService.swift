@@ -1,5 +1,13 @@
 import Foundation
 
+// ใช้ร่วมกันทั้งโปรเจกต์เพื่อไม่ให้ SwiftUI Preview เรียก API/WebSocket จริง
+// ซึ่งอาจทำให้ Preview รอเกินเวลาที่ Xcode กำหนดและขึ้น UpdateTimedOutError
+enum AppRuntime {
+    static var isRunningForPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+}
+
 // MARK: - API Service
 class APIService {
     static let shared = APIService()
@@ -21,6 +29,10 @@ class APIService {
         body: Encodable? = nil,
         requiresAuth: Bool = true
     ) async throws -> T {
+        guard !AppRuntime.isRunningForPreview else {
+            throw APIError.previewNetworkDisabled
+        }
+
         // Construct URL with query items
         guard var components = URLComponents(string: baseURL + endpoint) else {
             print("❌ Invalid Base URL + Endpoint: \(baseURL + endpoint)")
@@ -175,6 +187,7 @@ enum APIError: LocalizedError {
     case unauthorized
     case needsVerification
     case serverError(String)
+    case previewNetworkDisabled
     
     var errorDescription: String? {
         switch self {
@@ -192,6 +205,8 @@ enum APIError: LocalizedError {
             return "Needs Verification"
         case .serverError(let message):
             return message
+        case .previewNetworkDisabled:
+            return "Network requests are disabled in Xcode Preview"
         }
     }
 }
@@ -219,6 +234,8 @@ class WebSocketService {
     private init() {}
     
     func connect() {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         guard webSocketTask == nil else { return } // Already connected
         
         // Get base URL from APIService, but replace http/https with ws/wss

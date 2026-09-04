@@ -34,6 +34,8 @@ final class MessagePoller: ObservableObject {
     }
 
     func startPolling() {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         stopPolling()
         checkConversations()
         timer = Timer.scheduledTimer(withTimeInterval: 8.0, repeats: true) { [weak self] _ in
@@ -47,6 +49,8 @@ final class MessagePoller: ObservableObject {
     }
 
     func checkConversations() {
+        guard !AppRuntime.isRunningForPreview else { return }
+
         Task {
             do {
                 let conversations = try await MessageService.shared.getConversations()
