@@ -166,6 +166,18 @@ enum TripCategory: String, Codable, CaseIterable {
     case adventure = "ผจญภัย"
     case temple = "ไหว้พระ"
     case other = "อื่นๆ"
+
+    /// Bundled illustrated cover used only when the trip has no uploaded image.
+    var coverAssetName: String {
+        switch self {
+        case .beach, .mountain, .camping, .adventure, .other:
+            return "TripCoverNature"
+        case .city, .cafe, .photography, .temple:
+            return "TripCoverCity"
+        case .food, .hangout, .shopping, .concert:
+            return "TripCoverSocial"
+        }
+    }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()

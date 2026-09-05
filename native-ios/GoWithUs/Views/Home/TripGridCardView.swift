@@ -7,17 +7,20 @@ struct TripGridCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Image
             ZStack(alignment: .topTrailing) {
+                GeometryReader { geometry in
                 if let imageUrl = trip.imageUrl, !imageUrl.isEmpty {
                     CustomAsyncImage(url: imageUrl, contentMode: .fill)
-                        .frame(height: 140)
+                        .frame(width: geometry.size.width, height: 140)
                         .clipped()
                 } else {
-                    Image("sosuke")
+                    Image(trip.category.coverAssetName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(height: 140)
+                        .frame(width: geometry.size.width, height: 140)
                         .clipped()
                 }
+                }
+                .frame(height: 140)
                 
                 // Match Score Overlay
                 if let score = trip.matchScore {
