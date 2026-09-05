@@ -67,7 +67,7 @@ struct TripDetailView: View {
                         // ══════════════════════════════════════════════
                         // ▸ CONTENT
                         // ══════════════════════════════════════════════
-                        VStack(alignment: .leading, spacing: 22) {
+                        VStack(alignment: .leading, spacing: 18) {
                             badgesRow(trip: trip)
                             infoCards(trip: trip)
                             
@@ -88,8 +88,8 @@ struct TripDetailView: View {
                             gallerySection(trip: trip)
                             participantsSection(trip: trip)
                         }
-                        .padding(.horizontal, 22)
-                        .padding(.top, 22)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
                         .padding(.bottom, 200)
                     }
                 }
@@ -228,16 +228,17 @@ struct TripDetailView: View {
             return imgs
         }()
         
+        GeometryReader { geometry in
         ZStack(alignment: .bottom) {
             if allImages.isEmpty {
-                Image("sosuke")
+                Image(trip.category.coverAssetName)
                     .resizable().aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity).frame(height: 300).clipped()
+                    .frame(width: geometry.size.width, height: 240).clipped()
             } else {
                 TabView {
                     ForEach(Array(allImages.enumerated()), id: \.offset) { index, url in
                         CustomAsyncImage(url: url, contentMode: .fill)
-                            .frame(width: UIScreen.main.bounds.width, height: 300).clipped()
+                            .frame(width: geometry.size.width, height: 240).clipped()
                             .onTapGesture { 
                                 selectedImage = ImageViewerItem(urls: allImages, initialIndex: index) 
                             }
@@ -245,7 +246,7 @@ struct TripDetailView: View {
                 }
                 .tabViewStyle(.page)
                 .indexViewStyle(.page(backgroundDisplayMode: .always))
-                .frame(width: UIScreen.main.bounds.width, height: 300)
+                .frame(width: geometry.size.width, height: 240)
             }
             
             // Gradient scrim (เบาลงเพราะไม่ต้องรองรับตัวอักษรแล้ว)
@@ -253,6 +254,10 @@ struct TripDetailView: View {
                            startPoint: .center, endPoint: .bottom)
                 .frame(height: 80)
         }
+        .frame(width: geometry.size.width, height: 240)
+        .clipped()
+        }
+        .frame(height: 240)
     }
     
     // MARK: - Title Below Image
@@ -260,7 +265,7 @@ struct TripDetailView: View {
     private func titleBelowImage(trip: Trip) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(trip.title)
-                .font(.system(size: 28, weight: .black))
+                .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.adaptiveText)
                 .lineLimit(2)
             
@@ -272,7 +277,7 @@ struct TripDetailView: View {
             .font(.system(size: 15, weight: .bold))
             .foregroundColor(.adaptiveSecondaryText)
         }
-        .padding(.horizontal, 22)
+        .padding(.horizontal, 20)
         .padding(.top, 18)
         .padding(.bottom, 4)
     }
@@ -942,7 +947,7 @@ struct TripDetailView: View {
                 if let userId = viewModel.currentUserId,
                    let participant = trip.participants?.first(where: { $0.userId == userId }) {
                     // USER ALREADY JOINED
-                    VStack(spacing: 10) {
+                    HStack(spacing: 10) {
                         HStack(spacing: 12) {
                             // Switch Status Button (Prominent)
                             Button {
@@ -961,10 +966,10 @@ struct TripDetailView: View {
                                     }
                                     Text(participant.status == "interested" ? "เปลี่ยนเป็นจะไปแน่นอน" : "เปลี่ยนเป็นสนใจ")
                                 }
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(participant.status == "interested" ? .white : .orange)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                                .frame(minHeight: 44)
                                 .background(participant.status == "interested" ? Color.appPrimary : Color.orange.opacity(0.15))
                                 .cornerRadius(12)
                             }
@@ -973,10 +978,10 @@ struct TripDetailView: View {
                         
                         Button { viewModel.showLeaveSheet = true } label: {
                             Text("ออกจากทริป")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.red.opacity(0.8))
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
+                                .frame(minHeight: 44)
                                 .background(Color.red.opacity(0.06))
                                 .overlay(RoundedRectangle(cornerRadius: 14)
                                     .stroke(Color.red.opacity(0.2), lineWidth: 1))

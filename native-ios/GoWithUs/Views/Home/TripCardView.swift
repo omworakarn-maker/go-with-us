@@ -23,17 +23,20 @@ struct TripCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Image
             ZStack(alignment: .top) {
+                GeometryReader { geometry in
                 if let imageUrl = trip.imageUrl, !imageUrl.isEmpty {
                     CustomAsyncImage(url: imageUrl, contentMode: .fill)
-                        .frame(height: 200)
+                        .frame(width: geometry.size.width, height: 160)
                         .clipped()
                 } else {
-                    Image("sosuke")
+                    Image(trip.category.coverAssetName)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(height: 200)
+                        .frame(width: geometry.size.width, height: 160)
                         .clipped()
                 }
+                }
+                .frame(height: 160)
                 
                 HStack(alignment: .top) {
                     if let score = trip.matchScore {
@@ -51,28 +54,15 @@ struct TripCardView: View {
                     
                     Spacer()
                     
-                    // Category Badge
-                    HStack(spacing: 5) {
-                        Text(trip.category.icon)
-                            .font(.system(size: 13))
-                        Text(trip.category.rawValue)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.94))
-                    .cornerRadius(20)
-                    .shadow(color: .black.opacity(0.10), radius: 3, x: 0, y: 1)
                 }
                 .padding(12)
             }
             
             // Content
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 9) {
                 // Title
                 Text(trip.title)
-                    .font(.system(size: 18, weight: .black, design: .rounded))
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundColor(.adaptiveText)
                     .tracking(-0.5)
                     .lineLimit(2)
@@ -86,12 +76,20 @@ struct TripCardView: View {
                     Text(trip.destination)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.adaptiveSecondaryText)
+                        .lineLimit(1)
                 }
                 
                 // Date Range
-                Text(trip.formattedDateRange)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    Label(trip.formattedDateRange, systemImage: "calendar")
+                        .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text(trip.formattedBudget)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.appPrimary)
+                }
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.adaptiveSecondaryText)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 7) {
@@ -168,7 +166,7 @@ struct TripCardView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(14)
         }
         .background(Color.adaptiveCardBackground)
         .overlay(
